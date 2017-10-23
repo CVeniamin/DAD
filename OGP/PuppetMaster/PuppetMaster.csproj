@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{FF615DFD-8202-4BD1-A36D-81E906D00BAA}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>PuppetMaster</RootNamespace>
+    <RootNamespace>OGP.PuppetMaster</RootNamespace>
     <AssemblyName>PuppetMaster</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
