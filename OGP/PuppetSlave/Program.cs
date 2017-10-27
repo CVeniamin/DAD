@@ -10,7 +10,12 @@ namespace OGP.PuppetSlave
     {
         static void Main(string[] args)
         {
-            
+
+            // Use this to set the process name for server/client
+            // Process p = Process.Start("server/client.exe");
+            // while (p.MainWindowHandle == IntPtr.Zero)
+                // Application.DoEvents();
+            // SetWindowText(p.MainWindowHandle, "OGP Server/Client [PID]");
         }
     }
 }
