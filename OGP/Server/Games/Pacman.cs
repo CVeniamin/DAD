@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OGP.Server.Games
 {
@@ -20,37 +21,12 @@ namespace OGP.Server.Games
             }
         }
 
-        internal override void OnPlayerJoin(EventArgs e)
+        internal override IGameState Init()
         {
             throw new NotImplementedException();
         }
 
-        internal override void OnPlayerLeave(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void OnGameTick(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void Setup(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void Sart(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void End(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void Teardown(EventArgs e)
+        internal override IGameState Process(IGameState gameState, Dictionary<string, PlayerEvent> playerEventsSnapshot)
         {
             throw new NotImplementedException();
         }

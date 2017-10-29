@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace OGP.Server
 {
@@ -15,36 +16,48 @@ namespace OGP.Server
             }
 
             // Load requested games
-            List<Game> offeredGames = new List<Game>();
+            List<string> supportedGames = new List<string>();
             foreach (string gameName in argsOptions.Games)
             {
-                try
+                if (Type.GetType("OGP.Server.Games." + gameName) != null)
                 {
-                    Type gameType = Type.GetType("OGP.Server.Games." + gameName);
-                    offeredGames.Add((Game)Activator.CreateInstance(gameType, new object[] { argsOptions.TickDuration }));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Picked game is not avaialble: {0} [{1}]", gameName, e.Message);
-                    continue;
+                    supportedGames.Add(gameName);
+                } else { 
+                    Console.WriteLine("Following game is not supported: {0}", gameName);
                 }
             }
-            if (offeredGames.Count == 0)
+            if (supportedGames.Count == 0)
             {
-                Console.WriteLine("None of the selected games are avaialble");
+                Console.WriteLine("None of the selected games are supported. Shutting down.");
                 return;
             }
 
-            Uri serviceUri = new Uri(argsOptions.ServiceUrl);
+            Uri baseUri = new Uri(argsOptions.ServiceUrl);
 
-            ClusterManager clusterManager = new ClusterManager(argsOptions.ClusterId, argsOptions.ServerId, serviceUri);
-            GameManager gameManager = new GameManager(clusterManager, offeredGames, argsOptions.TickDuration, argsOptions.NumPlayers);
-            ClientManager clientManager = new ClientManager(gameManager, argsOptions.ServiceUrl);
+            ServerDefinition serverDefinition = new ServerDefinition
+            {
+                SupportedGames = supportedGames,
+                TickDuration = argsOptions.TickDuration,
+                NumPlayers = argsOptions.NumPlayers
+            };
 
-            gameManager.start();
-            clientManager.listen();
+            ClusterManager clusterManager = new ClusterManager(argsOptions.ClusterId, argsOptions.ServerId, baseUri, serverDefinition);
+            GameManager gameManager = new GameManager(clusterManager, serverDefinition);
+            ClientManager clientManager = new ClientManager(gameManager, baseUri);
+            
+            gameManager.Start();
+            clientManager.Listen();
 
             Console.Read();
+
+            Console.WriteLine("Shutting down...");
+
+            (new Thread(clusterManager.Exit)).Start();
+            (new Thread(gameManager.Exit)).Start();
+            (new Thread(clientManager.Exit)).Start();
+
+            Thread.Sleep(5000);
+            Environment.Exit(0);
         }
     }
 }

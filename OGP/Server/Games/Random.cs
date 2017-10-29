@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OGP.Server.Games
 {
@@ -6,41 +7,34 @@ namespace OGP.Server.Games
     {
         public Random(int tickDuration) : base(tickDuration)
         {
+            this.minimumQos = 1;
+            this.rules = "This is just a random game";
         }
 
-        internal override void End(EventArgs e)
+        internal override IGameState Init()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Setting up RandomGame");
+            return new RandomGameState();
         }
-        
-        internal override void OnGameTick(EventArgs e)
+        internal override IGameState Process(IGameState gameState, Dictionary<string, PlayerEvent> playerEventsSnapshot)
         {
-            throw new NotImplementedException();
+            if (gameState.GetType() != typeof(RandomGameState))
+            {
+                throw new Exception();
+            }
+
+            return new RandomGameState();
+        }
+    }
+
+    class RandomGameState : IGameState
+    {
+        private bool gameOver;
+        public RandomGameState()
+        {
+            gameOver = false;
         }
 
-        internal override void OnPlayerJoin(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void OnPlayerLeave(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void Sart(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void Setup(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal override void Teardown(EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
+        public bool GameOver { get => gameOver; set { gameOver = value;  } }
     }
 }

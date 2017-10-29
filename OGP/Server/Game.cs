@@ -1,34 +1,31 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OGP.Server
 {
-    public delegate void PlayerJoinEventHandler(EventArgs e);
-
-    public delegate void PlayerLeaveEventHandler(EventArgs e);
-
-    public delegate void GameTickEventHandler(EventArgs e);
-
     internal abstract class Game
     {
         private int tickDuration;
+
+        protected int minimumQos = 1;
+        protected int minimumPlayers = 1;
+        protected string rules = "";
+
+        public int MinimumQOS { get { return minimumQos;  } }
+        public int MinimumPlayers { get { return minimumPlayers;  } }
+        public string Rules { get { return rules; } }
 
         public Game(int tickDuration)
         {
             this.tickDuration = tickDuration;
         }
 
-        internal abstract void OnPlayerJoin(EventArgs e);
+        internal abstract IGameState Init();
+        internal abstract IGameState Process(IGameState gameState, Dictionary<string, PlayerEvent> playerEventsSnapshot);
+    }
 
-        internal abstract void OnPlayerLeave(EventArgs e);
-
-        internal abstract void OnGameTick(EventArgs e);
-
-        internal abstract void Setup(EventArgs e);
-
-        internal abstract void Sart(EventArgs e);
-
-        internal abstract void End(EventArgs e);
-
-        internal abstract void Teardown(EventArgs e);
+    internal interface IGameState
+    {
+        bool GameOver { get; set; }
     }
 }

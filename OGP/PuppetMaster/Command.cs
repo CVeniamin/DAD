@@ -66,7 +66,7 @@ namespace OGP.PuppetMaster
 
         public bool Exec()
         {
-            Console.WriteLine("Freezing {$0}", _pid);
+            Console.WriteLine("Freezing {0}", _pid);
             return false;
         }
     }
@@ -82,7 +82,7 @@ namespace OGP.PuppetMaster
 
         public bool Exec()
         {
-            Console.WriteLine("Unfreezing {$0}", _pid);
+            Console.WriteLine("Unfreezing {0}", _pid);
             return false;
         }
     }

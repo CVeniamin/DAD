@@ -1,21 +1,18 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace OGP.Server
 {
     internal class ClusterMember
     {
-        private Uri controlUri;
+        private ClusterService.Client thriftClient;
+        public ServerDefinition serverDefinition;
 
-        public ClusterMember(Uri controlUri)
+        public ClusterMember(ClusterService.Client thriftClient)
         {
-            this.controlUri = controlUri;
-            Console.WriteLine("New ClusterMember with URI {0}", controlUri.AbsoluteUri);
+            this.thriftClient = thriftClient;
+            this.serverDefinition = thriftClient.GetDefinition();
+            Console.WriteLine("Cluter member said they support: " + String.Join(String.Empty, this.serverDefinition.SupportedGames.ToArray()));
         }
-
-        internal Task<bool> isAlive()
-        {
-            return Task.FromResult<bool>(true);
-        }
+        
     }
 }

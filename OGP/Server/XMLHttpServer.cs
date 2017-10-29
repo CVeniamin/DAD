@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -8,8 +9,8 @@ namespace OGP.Server
 {
     internal class XmlHttpServer
     {
-        private Thread _serverThread;
-        private HttpListener _listener;
+        private Thread serverThread;
+        private HttpListener listener;
         private Uri listenBaseUri;
         private Dictionary<string, byte[]> xmls;
 
@@ -23,27 +24,26 @@ namespace OGP.Server
                 xmls.Add(entry.Key, Encoding.UTF8.GetBytes(entry.Value));
             }
             
-            _serverThread = new Thread(this.Listen);
-            _serverThread.Start();
+            serverThread = new Thread(this.Listen);
+            serverThread.Start();
         }
 
         public void Stop()
         {
-            _serverThread.Abort();
-            _listener.Stop();
+            serverThread.Abort();
+            listener.Stop();
         }
 
         private void Listen()
         {
-            _listener = new HttpListener();
-            _listener.Prefixes.Add(string.Format("http://{0}:{1}/", listenBaseUri.Host, listenBaseUri.Port));
-            _listener.Start();
+            listener = new HttpListener();
+            listener.Prefixes.Add(string.Format("http://{0}:{1}/", listenBaseUri.Host, listenBaseUri.Port));
+            listener.Start();
             while (true)
             {
                 try
                 {
-                    HttpListenerContext context = _listener.GetContext();
-                    Process(context);
+                    Process(listener.GetContext());
                 }
                 catch (Exception)
                 {
@@ -55,8 +55,7 @@ namespace OGP.Server
         {
             string path = context.Request.Url.AbsolutePath.Substring(1);
 
-            byte[] dd;
-            if (xmls.TryGetValue(path, out dd))
+            if (xmls.TryGetValue(path, out byte[] dd))
             {
                 try
                 {
