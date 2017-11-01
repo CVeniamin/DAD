@@ -5,6 +5,8 @@ using Rssdp;
 
 namespace OGP.Server
 {
+    interface ServerDefinition { IEnumerable<string> SupportedGames { get; } object TickDuration { get; } int NumPlayers { get; } };
+
     internal class ClusterManager
     {
         private XmlHttpServer clusterHttpServer;

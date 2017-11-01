@@ -38,8 +38,8 @@ namespace OGP.Server
 
             this.clusterManager = clusterManager;
             this.offeredGames = offeredGames;
-            this.tickDuration = serverDefinition.TickDuration;
-            this.numPlayers = serverDefinition.NumPlayers;
+            tickDuration = (int) serverDefinition.TickDuration;
+            numPlayers = serverDefinition.NumPlayers;
 
             this.gameSessions = new Dictionary<string, GameSession>();
 

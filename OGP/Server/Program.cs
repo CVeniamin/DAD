@@ -34,7 +34,7 @@ namespace OGP.Server
 
             Uri baseUri = new Uri(argsOptions.ServiceUrl);
 
-            ServerDefinition serverDefinition = new ServerDefinition
+            /*ServerDefinition serverDefinition = new ServerDefinition
             {
                 SupportedGames = supportedGames,
                 TickDuration = argsOptions.TickDuration,
@@ -55,6 +55,7 @@ namespace OGP.Server
             (new Thread(clusterManager.Exit)).Start();
             (new Thread(gameManager.Exit)).Start();
             (new Thread(clientManager.Exit)).Start();
+            */
 
             Thread.Sleep(5000);
             Environment.Exit(0);

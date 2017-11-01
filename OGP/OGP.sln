@@ -1,11 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{83C731A4-F319-4D0F-B983-72A65145CB48}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{22B2B4CC-4BFC-42BE-968D-0CF06A93CA4A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{83C731A4-F319-4D0F-B983-72A65145CB48} = {83C731A4-F319-4D0F-B983-72A65145CB48}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMaster", "PuppetMaster\PuppetMaster.csproj", "{FF615DFD-8202-4BD1-A36D-81E906D00BAA}"
 EndProject
