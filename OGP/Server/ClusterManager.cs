@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using Rssdp;
-using Thrift.Protocol;
-using Thrift.Server;
-using Thrift.Transport;
 
 namespace OGP.Server
 {
@@ -26,7 +21,6 @@ namespace OGP.Server
 
         private Dictionary<string, ClusterMember> clusterMembers;
         private Thread thriftServerThread;
-        private TThreadPoolServer thriftServer;
 
         public ClusterManager(string clusterId, string serverId, Uri baseUri, ServerDefinition serverDefinition)
         {
@@ -41,15 +35,6 @@ namespace OGP.Server
 
             BeginSearch();
             Console.WriteLine("[ClusterManager]: Searching for other cluster nodes...");
-
-            var clusterServiceHandler = new ClusterServiceHandler(this, serverDefinition);
-            var clusterServiceProcessor = new ClusterService.Processor(clusterServiceHandler);
-            
-            TServerTransport thriftTransport = new TServerSocket(new TcpListener(Dns.GetHostAddresses(baseUri.Host)[0], baseUri.Port + 2), 5000);
-            this.thriftServer = new TThreadPoolServer(clusterServiceProcessor, thriftTransport);
-
-            this.thriftServerThread = new Thread(this.thriftServer.Serve);
-            this.thriftServerThread.Start();
         }
 
         internal void Exit()
@@ -58,27 +43,10 @@ namespace OGP.Server
 
             Console.WriteLine("[ClusterManager] Unpublishing server");
             devicePublisher.RemoveDevice(this.deviceDefinition);
-
-            Console.WriteLine("[ClusterManager] Stopping cluster service");
-            this.thriftServer.Stop();
-            thriftServerThread.Join();
-
+            
             Console.WriteLine("[ClusterManager] Exited");
         }
-
-        public string ClusterId => clusterId;
-        public string ServerId => serverId;
-
-        public void ClusterBroadcast(string message)
-        {
-
-        }
-
-        public void ClusterUnicast(string uuid, string message)
-        {
-
-        }
-
+        
         private void PublishDevice()
         {
             string ddHost = this.baseUri.Host;
@@ -166,26 +134,9 @@ namespace OGP.Server
 
         private void AddClusterMember(string uuid, Uri controlUri)
         {
-            ClusterService.Client thriftClient = null;
-            try
-            {
-                var transport = new TSocket(controlUri.Host, controlUri.Port, 5000);
-                thriftClient = new ClusterService.Client(new TBinaryProtocol(transport));
-                transport.Open();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-            finally
-            {
-                if (thriftClient != null)
-                {
-                    ClusterMember clusterMember = new ClusterMember(thriftClient);
-                    this.clusterMembers.Add(uuid, clusterMember);
-                    Console.WriteLine("[ClusterManager]: Adding cluster peer {0}", uuid);
-                }
-            }
+            ClusterMember clusterMember = new ClusterMember(null);
+            this.clusterMembers.Add(uuid, clusterMember);
+            Console.WriteLine("[ClusterManager]: Adding cluster peer {0}", uuid);
         }
     }
 }
