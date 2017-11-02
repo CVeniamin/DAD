@@ -199,9 +199,141 @@ namespace OGP.Client
 
         }
 
+        private PictureBox redGhost;
+        private PictureBox yellowGhost;
+        private PictureBox pinkGhost;
+
+        
+        private PictureBox[] coinsArray = Enumerable.Repeat(0, 41).Select(c => new PictureBox()).ToArray();
+        private PictureBox[] wallsArray = Enumerable.Repeat(0, 4).Select(w => new PictureBox()).ToArray();
+
+        private void drawCoins()
+        {
+            short coinPosX = 15;
+            short coinPosY = 45;
+            short tabIndex = 73;
+            short columnsX = 1;
+            for (int i = 0; i < coinsArray.Length; i++)
+            {
+                //completed one row, reset x and y positions to new row
+                if (columnsX == 7)
+                {
+                    coinPosX = 15;
+                    coinPosY += 45;
+                    columnsX = 1;
+                }
+
+                coinsArray[i].Image = global::OGP.Client.Properties.Resources.cccc;
+                coinsArray[i].Location = new Point(coinPosX, coinPosY);
+                coinsArray[i].Margin = new Padding(4);
+                coinsArray[i].Name = "pictureBox" + i.ToString();
+                coinsArray[i].Size = new Size(15, 15);
+                coinsArray[i].SizeMode = PictureBoxSizeMode.StretchImage;
+                coinsArray[i].TabIndex = tabIndex;
+                coinsArray[i].TabStop = false;
+                coinsArray[i].Tag = "coin";
+
+                coinPosX += 60;
+                columnsX++;
+                tabIndex++;
+
+                ((System.ComponentModel.ISupportInitialize)(coinsArray[i])).BeginInit();
+
+            }
+        }
+        /// <summary>
+        /// Method used to draw a ghost give a Object, name, resource and x,y 
+        /// </summary>
+        /// 
+        private void drawGhost(PictureBox ghost, string ghostname, Bitmap ghostResource, int x, int y)
+        {
+            ghost.BackColor = Color.Transparent;
+            ghost.Image = ghostResource;
+            ghost.Location = new Point(x, y);
+            ghost.Margin = new Padding(4);
+            ghost.Name = ghostname;
+            ghost.Size = new Size(40, 37);
+            ghost.SizeMode = PictureBoxSizeMode.Zoom;
+            ghost.TabIndex = 3;
+            ghost.TabStop = false;
+            ghost.Tag = "ghost";
+
+            ((System.ComponentModel.ISupportInitialize)(ghost)).BeginInit();
+        }
+
+        /// <summary>
+        /// Method used to draw a wall give a Object, name, pos(x,y) and size(w,h)
+        /// </summary>
+        private void drawWall(PictureBox wall, string name, int[] pos)
+        {
+            wall.BackColor = Color.MidnightBlue;
+            wall.Location = new Point(pos[0], pos[1]);
+            wall.Margin = new Padding(4);
+            wall.Name = name;
+            wall.Size = new Size(15, 80);
+            wall.SizeMode = PictureBoxSizeMode.Zoom;
+            wall.TabIndex = 3;
+            wall.TabStop = false;
+            wall.Tag = "wall";
+
+            ((System.ComponentModel.ISupportInitialize)(wall)).BeginInit();
+        }
+
         private void MainFrame_Load(object sender, EventArgs e)
         {
 
+            this.pinkGhost = new PictureBox();
+            this.yellowGhost = new PictureBox();
+            this.redGhost = new PictureBox();
+
+            int[] wall1 = new int[] { 110, 50 };
+            int[] wall2 = new int[] { 280, 50 };
+            int[] wall3 = new int[] { 110, 245 };
+            int[] wall4 = new int[] { 300, 245 };
+
+            int[][] walls = { wall1, wall2, wall3, wall4 };
+
+            for (int i = 0; i < wallsArray.Length; i++)
+            {
+                drawWall(wallsArray[i], "wall" + i.ToString(), walls[i]);
+            }
+
+            drawGhost(this.pinkGhost, "pinkGhost", global::OGP.Client.Properties.Resources.pink_guy, 200, 50);
+            drawGhost(this.yellowGhost, "yellowGhost", global::OGP.Client.Properties.Resources.yellow_guy, 200, 235);
+            drawGhost(this.redGhost, "redGhost", global::OGP.Client.Properties.Resources.red_guy, 240, 90);
+
+            this.Controls.Add(this.pinkGhost);
+            this.Controls.Add(this.yellowGhost);
+            this.Controls.Add(this.redGhost);
+
+
+            drawCoins();
+
+            void AddControlsFor(PictureBox[] array)
+            {
+                for (int i = 0; i < array.Length; i++)
+                {
+                    this.Controls.Add(array[i]);
+                }
+            }
+
+            AddControlsFor(wallsArray);
+            AddControlsFor(coinsArray);
+
+            ((System.ComponentModel.ISupportInitialize)(this.pinkGhost)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yellowGhost)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.redGhost)).EndInit();
+
+            void EndInitFor(PictureBox[] array)
+            {
+                for (int i = 0; i < array.Length; i++)
+                {
+                    ((System.ComponentModel.ISupportInitialize)(array[i])).EndInit();
+                }
+            }
+
+            EndInitFor(wallsArray);
+            EndInitFor(coinsArray);
         }
     }
 }
