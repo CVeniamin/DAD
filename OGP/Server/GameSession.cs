@@ -9,7 +9,7 @@ namespace OGP.Server
     internal class GameSession
     {
         private Game game;
-        private IGameState gameState;
+        private IGame gameState;
         
         private bool isGameRunning = false;
         private int tickId = 0;
@@ -24,7 +24,7 @@ namespace OGP.Server
         public GameSession(Game game)
         {
             this.game = game;
-            this.gameState = game.Init();
+            //this.gameState = game.Init();
 
             this.players = new Dictionary<string, Player>();
             this.playerEvents = new Dictionary<string, PlayerEvent>();
@@ -114,7 +114,7 @@ namespace OGP.Server
                 Dictionary<string, PlayerEvent> playerEventsSnapshot = new Dictionary<string, PlayerEvent>(this.playerEvents);
                 this.playerEvents.Clear();
 
-                this.gameState = game.Process(this.gameState, playerEventsSnapshot);
+                //this.gameState = game.Process(this.gameState, playerEventsSnapshot);
                 
                 return gameState.GameOver;
             });

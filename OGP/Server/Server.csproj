@@ -58,6 +58,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -72,9 +74,9 @@
     <Compile Include="ClusterMember.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="GameManager.cs" />
+    <Compile Include="GameNotFoundException.cs" />
+    <Compile Include="GameService.cs" />
     <Compile Include="GameSession.cs" />
-    <Compile Include="Games\Pacman.cs" />
-    <Compile Include="Games\Random.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="PlayerEvent.cs" />

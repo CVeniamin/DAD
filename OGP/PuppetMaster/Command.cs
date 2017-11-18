@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace OGP.PuppetMaster
 {
@@ -9,25 +11,36 @@ namespace OGP.PuppetMaster
 
     internal class StartClient : ICommand
     {
+        String args;
         public StartClient(string pid, string pcsURL, string clientURL, int msecPerRound, int numPlayers, string filename)
         {
+            args = "-p " + pid + " -u " + pcsURL + " -c " + clientURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
+
+            if (!(filename == null || filename == String.Empty))
+            {
+                args += " -f " + filename;
+            }
         }
 
         public bool Exec()
         {
-            return false;
+            Process.Start("Client.exe", args);
+            return true;
         }
     }
 
     internal class StartServer : ICommand
     {
+        String args;
         public StartServer(string pid, string pcsURL, string serverURL, int msecPerRound, int numPlayers)
         {
+            args = "-p " + pid + " -u " + pcsURL + " -s " + serverURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
         }
 
         public bool Exec()
         {
-            return false;
+            Process.Start("Server.exe", args);
+            return true;
         }
     }
 

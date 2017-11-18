@@ -5,22 +5,20 @@ namespace OGP.Server
 {
     internal class ArgsOptions
     {
-        [Option('i', "pid", Required = true)]
-        public string ServerId { get; set; }
+        [Option('p', "pid", Required = true)]
+        public string PID { get; set; }
 
-        [Option('c', "cluster", Required = true)]
-        public string ClusterId { get; set; }
+        [Option('u', "PCS_URL", Required = true)]
+        public string PCS_URL { get; set; }
 
-        [Option('u', "url", Required = true)]
-        public string ServiceUrl { get; set; }
+        [Option('s', "Server_URL", Required = true)]
+        public string Server_URL { get; set; }
 
-        [Option('t', "tick", DefaultValue = 20)]
+        [Option('m', "MSEC_PER_ROUND", DefaultValue = 20)]
         public int TickDuration { get; set; }
 
-        [Option('p', "players", DefaultValue = 5)]
+        [Option('n', "NUM_PLAYERS", DefaultValue = 5)]
         public int NumPlayers { get; set; }
 
-        [OptionList('g', "games", Separator = ',', DefaultValue = new[] { "Random" })]
-        public IList<string> Games { get; set; }
     }
 }

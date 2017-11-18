@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Tcp;
 
 namespace OGP.Server
 {
@@ -8,57 +10,50 @@ namespace OGP.Server
     {
         private static void Main(string[] args)
         {
+
             var argsOptions = new ArgsOptions();
-            if (!CommandLine.Parser.Default.ParseArguments(args, argsOptions))
+            if (CommandLine.Parser.Default.ParseArguments(args, argsOptions))
             {
-                Console.WriteLine("Required args missing");
-                return;
+                Console.WriteLine("Started Server with PID: " + argsOptions.PID);
+                ConnectServer(8086, typeof(Game), "GameObject", WellKnownObjectMode.Singleton);
+                System.Console.WriteLine("<enter> para sair...");
+                Console.ReadLine();
             }
 
-            // Load requested games
-            List<string> supportedGames = new List<string>();
-            foreach (string gameName in argsOptions.Games)
-            {
-                if (Type.GetType("OGP.Server.Games." + gameName) != null)
-                {
-                    supportedGames.Add(gameName);
-                } else { 
-                    Console.WriteLine("Following game is not supported: {0}", gameName);
-                }
-            }
-            if (supportedGames.Count == 0)
-            {
-                Console.WriteLine("None of the selected games are supported. Shutting down.");
-                return;
-            }
+            //// Load requested games
+            //List<string> supportedGames = new List<string>();
+            //foreach (string gameName in argsOptions.Games)
+            //{
+            //    if (Type.GetType("OGP.Server.Games." + gameName) != null)
+            //    {
+            //        supportedGames.Add(gameName);
+            //    } else { 
+            //        Console.WriteLine("Following game is not supported: {0}", gameName);
+            //    }
+            //}
 
-            Uri baseUri = new Uri(argsOptions.ServiceUrl);
+            //if (supportedGames.Count == 0)
+            //{
+            //    Console.WriteLine("None of the selected games are supported. Shutting down.");
+            //    return;
+            //}
 
-            /*ServerDefinition serverDefinition = new ServerDefinition
-            {
-                SupportedGames = supportedGames,
-                TickDuration = argsOptions.TickDuration,
-                NumPlayers = argsOptions.NumPlayers
-            };
+        }
 
-            ClusterManager clusterManager = new ClusterManager(argsOptions.ClusterId, argsOptions.ServerId, baseUri, serverDefinition);
-            GameManager gameManager = new GameManager(clusterManager, serverDefinition);
-            ClientManager clientManager = new ClientManager(gameManager, baseUri);
-            
-            gameManager.Start();
-            clientManager.Listen();
+        private static void ConnectServer(int port,  Type t, String objName, WellKnownObjectMode wellKnown)
+        {
+            TcpChannel channel = new TcpChannel(port);
+            ChannelServices.RegisterChannel(channel, false);
 
-            Console.Read();
+            ActivateRemoteObject(t, objName, wellKnown);
+        }
 
-            Console.WriteLine("Shutting down...");
-
-            (new Thread(clusterManager.Exit)).Start();
-            (new Thread(gameManager.Exit)).Start();
-            (new Thread(clientManager.Exit)).Start();
-            */
-
-            Thread.Sleep(5000);
-            Environment.Exit(0);
+        private static void ActivateRemoteObject(Type t, String objName, WellKnownObjectMode wellKnown)
+        {
+            RemotingConfiguration.RegisterWellKnownServiceType(
+                t,
+                objName,
+                wellKnown);
         }
     }
 }

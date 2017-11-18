@@ -1,9 +1,12 @@
-﻿using System;
+﻿using OGP.Server;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -35,9 +38,10 @@ namespace OGP.Client
         int ghost3x = 5;
         int ghost3y = 5;
 
-        public MainFrame()
+        public MainFrame(string message)
         {
             InitializeComponent();
+            tbChat.Text += message;
             label2.Visible = false;
         }
 
@@ -82,6 +86,7 @@ namespace OGP.Client
             if (e.KeyCode == Keys.Right)
             {
                 goright = false;
+
             }
             if (e.KeyCode == Keys.Up)
             {
@@ -202,12 +207,11 @@ namespace OGP.Client
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
-
         
         private PictureBox[] coinsArray = Enumerable.Repeat(0, 41).Select(c => new PictureBox()).ToArray();
         private PictureBox[] wallsArray = Enumerable.Repeat(0, 4).Select(w => new PictureBox()).ToArray();
 
-        private void drawCoins()
+        private void DrawCoins()
         {
             short coinPosX = 15;
             short coinPosY = 45;
@@ -245,7 +249,7 @@ namespace OGP.Client
         /// Method used to draw a ghost give a Object, name, resource and x,y 
         /// </summary>
         /// 
-        private void drawGhost(PictureBox ghost, string ghostname, Bitmap ghostResource, int x, int y)
+        private void DrawGhost(PictureBox ghost, string ghostname, Bitmap ghostResource, int x, int y)
         {
             ghost.BackColor = Color.Transparent;
             ghost.Image = ghostResource;
@@ -264,7 +268,7 @@ namespace OGP.Client
         /// <summary>
         /// Method used to draw a wall give a Object, name, pos(x,y) and size(w,h)
         /// </summary>
-        private void drawWall(PictureBox wall, string name, int[] pos)
+        private void DrawWall(PictureBox wall, string name, int[] pos)
         {
             wall.BackColor = Color.MidnightBlue;
             wall.Location = new Point(pos[0], pos[1]);
@@ -279,9 +283,22 @@ namespace OGP.Client
             ((System.ComponentModel.ISupportInitialize)(wall)).BeginInit();
         }
 
+        private static Game GetGameObject(String url, int port, String objName)
+        {
+            TcpChannel chan = new TcpChannel();
+            ChannelServices.RegisterChannel(chan, true);
+            String endpoint = url + port.ToString() + "/" + objName;
+            Game game = (Game)Activator.GetObject(
+              typeof(Game), endpoint);
+            return game;
+        }
+
         private void MainFrame_Load(object sender, EventArgs e)
         {
+            Game game = GetGameObject("tcp://localhost:", 8086, "GameObject");
+            string hello = game.SayHello();
 
+            tbChat.Text += hello;
             this.pinkGhost = new PictureBox();
             this.yellowGhost = new PictureBox();
             this.redGhost = new PictureBox();
@@ -295,21 +312,21 @@ namespace OGP.Client
 
             for (int i = 0; i < wallsArray.Length; i++)
             {
-                drawWall(wallsArray[i], "wall" + i.ToString(), walls[i]);
+                DrawWall(wallsArray[i], "wall" + i.ToString(), walls[i]);
             }
 
-            drawGhost(this.pinkGhost, "pinkGhost", global::OGP.Client.Properties.Resources.pink_guy, 200, 50);
-            drawGhost(this.yellowGhost, "yellowGhost", global::OGP.Client.Properties.Resources.yellow_guy, 200, 235);
-            drawGhost(this.redGhost, "redGhost", global::OGP.Client.Properties.Resources.red_guy, 240, 90);
+            DrawGhost(this.pinkGhost, "pinkGhost", global::OGP.Client.Properties.Resources.pink_guy, 200, 50);
+            DrawGhost(this.yellowGhost, "yellowGhost", global::OGP.Client.Properties.Resources.yellow_guy, 200, 235);
+            DrawGhost(this.redGhost, "redGhost", global::OGP.Client.Properties.Resources.red_guy, 240, 90);
 
             this.Controls.Add(this.pinkGhost);
             this.Controls.Add(this.yellowGhost);
             this.Controls.Add(this.redGhost);
 
 
-            drawCoins();
+            DrawCoins();
 
-            void AddControlsFor(PictureBox[] array)
+            void addControlFor(PictureBox[] array)
             {
                 for (int i = 0; i < array.Length; i++)
                 {
@@ -317,8 +334,8 @@ namespace OGP.Client
                 }
             }
 
-            AddControlsFor(wallsArray);
-            AddControlsFor(coinsArray);
+            addControlFor(wallsArray);
+            addControlFor(coinsArray);
 
             ((System.ComponentModel.ISupportInitialize)(this.pinkGhost)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.yellowGhost)).EndInit();

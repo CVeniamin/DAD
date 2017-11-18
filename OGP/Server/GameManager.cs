@@ -73,25 +73,19 @@ namespace OGP.Server
                     gameSessionId = Guid.NewGuid().ToString();
                 } while (gameSessions.ContainsKey(gameSessionId));
 
-                if (game.MinimumQOS > 1)
-                {
-                    // Cluster game session
-                }
-                else
-                {
-                    // Single node game session
-                    GameSession gameSession = new GameSession(game);
-                    gameSessions.Add(gameSessionId, gameSession);
+                
+                // Single node game session
+                GameSession gameSession = new GameSession(game);
+                gameSessions.Add(gameSessionId, gameSession);
 
-                    Console.WriteLine("[GameManager] GameSession {0} has started", gameSessionId);
+                Console.WriteLine("[GameManager] GameSession {0} has started", gameSessionId);
 
-                    gameSession.EndPromise.Done(() =>
-                        {
-                            Console.WriteLine("[GameManager] GameSession {0} has ended", gameSessionId);
-                            gameSessions.Remove(gameSessionId);
-                            gameSession = null;
-                        });
-                }
+                gameSession.EndPromise.Done(() =>
+                    {
+                        Console.WriteLine("[GameManager] GameSession {0} has ended", gameSessionId);
+                        gameSessions.Remove(gameSessionId);
+                        gameSession = null;
+                    });
 
                 return gameSessionId;
             }
