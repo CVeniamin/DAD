@@ -9,6 +9,21 @@ namespace OGP.PuppetMaster
         bool Exec();
     }
 
+    public class Endpoint {
+        private static List<string> servers = null;
+
+        public Endpoint(string url)
+        {
+            if(servers == null)
+            {
+                servers = new List<string>();
+            }
+            servers.Add(url);
+        }
+
+        public static List<string> Servers { get => servers; set => servers = value; }
+    }
+
     internal class StartClient : ICommand
     {
         String args;
@@ -20,11 +35,21 @@ namespace OGP.PuppetMaster
             {
                 args += " -f " + filename;
             }
+            if(Endpoint.Servers.Count > 0)
+            {
+                args += " -s ";
+                foreach (var serverURL in Endpoint.Servers)
+                {
+                    args += serverURL + ",";
+                }
+            }
+            
         }
 
         public bool Exec()
         {
             Process.Start("Client.exe", args);
+            Console.WriteLine(args);
             return true;
         }
     }
@@ -35,6 +60,7 @@ namespace OGP.PuppetMaster
         public StartServer(string pid, string pcsURL, string serverURL, int msecPerRound, int numPlayers)
         {
             args = "-p " + pid + " -u " + pcsURL + " -s " + serverURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
+            new Endpoint(serverURL);
         }
 
         public bool Exec()

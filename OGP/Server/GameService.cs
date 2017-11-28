@@ -52,7 +52,7 @@ namespace OGP.Server
             }
             else
             {
-                throw new GameNotFoundException("");
+                throw new GameNotFoundException("Game Not found!");
             }
             return true;
         }

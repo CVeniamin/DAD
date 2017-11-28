@@ -1,4 +1,5 @@
-﻿using OGP.Server;
+﻿using OGP.PuppetSlave;
+using OGP.Server;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,6 +11,8 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Threading;
+using System.Runtime.Remoting;
 
 namespace OGP.Client
 {
@@ -38,10 +41,82 @@ namespace OGP.Client
         int ghost3x = 5;
         int ghost3y = 5;
 
-        public MainFrame(string message)
+
+        // This delegate enables asynchronous calls for setting  
+        // the text property on a TextBox control.  
+        delegate void SetTextDelegate(string text);
+        private Thread chatThread = null;
+        private void ThreadProcSafe(string text)
+        {
+            this.SetText(text);
+        }
+
+        // This method demonstrates a pattern for making thread-safe  
+        // calls on a Windows Forms control.   
+        //  
+        // If the calling thread is different from the thread that  
+        // created the TextBox control, this method creates a  
+        // StringArgReturningVoidDelegate and calls itself asynchronously using the  
+        // Invoke method.  
+        //  
+        // If the calling thread is the same as the thread that created  
+        // the TextBox control, the Text property is set directly.   
+
+        private void SetText(string text)
+        {
+            // InvokeRequired required compares the thread ID of the  
+            // calling thread to the thread ID of the creating thread.  
+            // If these threads are different, it returns true.  
+            if (this.tbChat.InvokeRequired)
+            {
+                SetTextDelegate d = new SetTextDelegate(SetText);
+                this.Invoke(d, new object[] { text });
+            }
+            else
+            {
+                this.tbChat.Text += text;
+            }
+        }
+
+        private IChatManager chatManager;
+
+        public ChatClient chatClient;
+
+        public MainFrame(string[] args)
         {
             InitializeComponent();
-            tbChat.Text += message;
+
+            //only works without filename provided
+            string clientURL = args[5];
+            Uri clientUri = new Uri(clientURL);
+            //string clientHostName = clientUri.ToString().Replace(clientUri.PathAndQuery, "");
+
+            string serverURL = args[11];
+            string[] serverURLS = serverURL.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            List<string> namesList = new List<string>(serverURLS.Length);
+            namesList.AddRange(serverURLS);
+            List<Uri> serversURIs = new List<Uri>();
+            foreach(var n in namesList)
+            {
+                serversURIs.Add(new Uri(n));
+            }
+
+            string serverHostName = serversURIs[0].ToString().Replace(serversURIs[0].PathAndQuery, "");
+
+            this.chatThread = new Thread(() => ThreadProcSafe(serverHostName));
+            this.chatThread.Start();
+
+            TcpChannel channel = new TcpChannel(clientUri.Port);
+            ChannelServices.RegisterChannel(channel, true);
+
+            chatClient = new ChatClient(this);
+            RemotingServices.Marshal(chatClient, "ChatClient");
+
+            chatManager = (IChatManager) Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
+
+            chatManager.RegisterClient(clientURL);
+            chatClient.Clients = chatManager.getClients();
+
             label2.Visible = false;
         }
 
@@ -57,6 +132,13 @@ namespace OGP.Client
             {
                 //TODO: send to server moveRight
                 goright = true;
+                int i = 1;
+                foreach(var v in chatClient.Clients)
+                {
+                    tbChat.Text += i.ToString();
+                    i++;
+                }
+                
                 pacman.Image = Properties.Resources.Right;
             }
             if (e.KeyCode == Keys.Up)
@@ -70,6 +152,7 @@ namespace OGP.Client
                 //TODO: send to server moveDown
                 godown = true;
                 pacman.Image = Properties.Resources.down;
+
             }
             if (e.KeyCode == Keys.Enter)
             {
@@ -189,12 +272,14 @@ namespace OGP.Client
             {
                 ghost3y = -ghost3y;
             }
+
         }
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
+                chatClient.SendMsg(tbMsg.Text);
                 tbChat.Text += "\r\n" + tbMsg.Text; tbMsg.Clear(); tbMsg.Enabled = false; this.Focus();
             }
         }
@@ -295,10 +380,9 @@ namespace OGP.Client
 
         private void MainFrame_Load(object sender, EventArgs e)
         {
-            Game game = GetGameObject("tcp://localhost:", 8086, "GameObject");
-            string hello = game.SayHello();
-
-            tbChat.Text += hello;
+            //Game game = GetGameObject("tcp://localhost:", 8086, "GameObject");
+            //string hello = game.SayHello();
+            //tbChat.Text += hello;
             this.pinkGhost = new PictureBox();
             this.yellowGhost = new PictureBox();
             this.redGhost = new PictureBox();
@@ -352,5 +436,65 @@ namespace OGP.Client
             EndInitFor(wallsArray);
             EndInitFor(coinsArray);
         }
+
+        public void AddMsg(string s)
+        {
+            tbChat.Text += "\r\n" + s;
+        }
+
+        delegate void DelAddMsg(string mensagem);
+
+        public class ChatClient : MarshalByRefObject, IChatClient
+        {
+            public static MainFrame form;
+
+            public void MsgToClient(string mensagem)
+            {
+                // thread-safe access to form
+                form.Invoke(new DelAddMsg(form.AddMsg), mensagem);
+            }
+
+            List<IChatClient> clients;
+            List<string> messages;
+
+            public List<IChatClient> Clients { get => clients; set => clients = value; }
+
+            public ChatClient(MainFrame mf)
+            {
+                Clients = new List<IChatClient>();
+                messages = new List<string>();
+                form = mf;
+            }
+
+            public void SendMsg(string mensagem)
+            {
+                messages.Add(mensagem);
+                ThreadStart ts = new ThreadStart(this.BroadcastMessage);
+                Thread t = new Thread(ts);
+                t.Start();
+            }
+
+            private void BroadcastMessage()
+            {
+                string MsgToBcast;
+                lock (this)
+                {
+                    MsgToBcast = messages[messages.Count - 1];
+                }
+                for (int i = 0; i < Clients.Count; i++)
+                {
+                    try
+                    {
+                        ((IChatClient) Clients[i]).MsgToClient(MsgToBcast);
+                    }
+                    catch (Exception e)
+                    {
+                        MsgToClient("An error Occurred " + e);
+                        Clients.RemoveAt(i);
+                    }
+                }
+            }
+        }
     }
+    
 }

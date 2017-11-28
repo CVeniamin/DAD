@@ -1,13 +1,35 @@
-﻿using System;
+﻿using OGP.PuppetSlave;
+using System;
 using System.Collections.Generic;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Threading;
 
 namespace OGP.Server
 {
     internal class Program
     {
+        //private GameService gameService;
+        private static ChatManager chatManager;
+        private static void RegisterServices()
+        {
+            RemotingConfiguration.RegisterWellKnownServiceType(
+                typeof(GameService),
+                "GameService",
+                WellKnownObjectMode.Singleton);
+
+            //ChatService chatService = new ChatService();
+            //RemotingServices.Marshal(chatService, "ChatService");
+
+            chatManager = new ChatManager();
+            RemotingServices.Marshal(chatManager, "ChatManager");
+
+            //RemotingConfiguration.RegisterWellKnownServiceType(
+            //    typeof(ChatServerServices), "ChatServer",
+            //    WellKnownObjectMode.Singleton);
+        }
+
         private static void Main(string[] args)
         {
 
@@ -15,37 +37,49 @@ namespace OGP.Server
             if (CommandLine.Parser.Default.ParseArguments(args, argsOptions))
             {
                 Console.WriteLine("Started Server with PID: " + argsOptions.PID);
-                ConnectServer(8086, typeof(Game), "GameObject", WellKnownObjectMode.Singleton);
-                System.Console.WriteLine("<enter> para sair...");
-                Console.ReadLine();
+                // change usingSingleton to false to use Marshal activation
+                Uri uri = new Uri(argsOptions.Server_URL);
+                TcpChannel channel = new TcpChannel(uri.Port);
+                ChannelServices.RegisterChannel(channel, true);
+
+                RegisterServices();
+                Console.WriteLine("Server Registered at " + argsOptions.Server_URL);
+                Console.WriteLine("Server Port at " + uri.Port);
+                Console.WriteLine("Waiting for players to join...");
+
+                Thread t = new Thread(() => WaitForPlayers(argsOptions));
+                t.Start();
+                
+                //// Load requested games
+                //List<string> supportedGames = new List<string>();
+                //foreach (string gameName in argsOptions.Games)
+                //{
+                //    if (Type.GetType("OGP.Server.Games." + gameName) != null)
+                //    {
+                //        supportedGames.Add(gameName);
+                //    } else { 
+                //        Console.WriteLine("Following game is not supported: {0}", gameName);
+                //    }
+                //}
+
+                //if (supportedGames.Count == 0)
+                //{
+                //    Console.WriteLine("None of the selected games are supported. Shutting down.");
+                //    return;
+                //}
             }
-
-            //// Load requested games
-            //List<string> supportedGames = new List<string>();
-            //foreach (string gameName in argsOptions.Games)
-            //{
-            //    if (Type.GetType("OGP.Server.Games." + gameName) != null)
-            //    {
-            //        supportedGames.Add(gameName);
-            //    } else { 
-            //        Console.WriteLine("Following game is not supported: {0}", gameName);
-            //    }
-            //}
-
-            //if (supportedGames.Count == 0)
-            //{
-            //    Console.WriteLine("None of the selected games are supported. Shutting down.");
-            //    return;
-            //}
-
         }
 
-        private static void ConnectServer(int port,  Type t, String objName, WellKnownObjectMode wellKnown)
+        private static void WaitForPlayers(ArgsOptions argsOptions)
         {
-            TcpChannel channel = new TcpChannel(port);
-            ChannelServices.RegisterChannel(channel, false);
+            while (chatManager.getClients().Count < argsOptions.NumPlayers)
+            {
+                Console.Write(".");
+                Thread.Sleep(1000);
+            }
 
-            ActivateRemoteObject(t, objName, wellKnown);
+            System.Console.WriteLine("<enter> to exit...");
+            System.Console.ReadLine();
         }
 
         private static void ActivateRemoteObject(Type t, String objName, WellKnownObjectMode wellKnown)
@@ -55,5 +89,31 @@ namespace OGP.Server
                 objName,
                 wellKnown);
         }
+    }
+
+    class ChatManager : MarshalByRefObject, IChatManager
+    {
+        List<IChatClient> clients;
+
+        public ChatManager()
+        {
+            clients = new List<IChatClient>();
+        }
+
+        public List<IChatClient> getClients()
+        {
+
+            //TODO: server needs to push the list of clients for each client after all clients are connected
+            return clients;
+        }
+
+        public IChatClient RegisterClient(string url)
+        {
+            Console.WriteLine("New client listening at " + url);
+            IChatClient newClient = (IChatClient)Activator.GetObject(typeof(IChatClient), url);
+            clients.Add(newClient);
+            return newClient;
+        }
+
     }
 }

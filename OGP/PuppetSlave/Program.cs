@@ -18,4 +18,9 @@ namespace OGP.PuppetSlave
             // SetWindowText(p.MainWindowHandle, "OGP Server/Client [PID]");
         }
     }
+
+    public interface IHello
+    {
+        string Hello();
+    }
 }

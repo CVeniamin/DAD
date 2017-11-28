@@ -6,7 +6,7 @@ namespace OGP.PuppetMaster
     internal class CommandParser
     {
         static readonly Parser<string> PID = Parse.LetterOrDigit.AtLeastOnce().Text().Token();
-        static readonly Parser<string> URL = Parse.LetterOrDigit.AtLeastOnce().Text().Token();
+        static readonly Parser<string> URL = Parse.CharExcept(" ").AtLeastOnce().Text().Token();
         static readonly Parser<string> Number = Parse.Digit.AtLeastOnce().Text().Token();
 
         static readonly Parser<ICommand> StartClient =

@@ -11,7 +11,6 @@ namespace OGP.Server
         private Stopwatch stopwatch;
         private Timer timer;
 
-        private ClusterManager clusterManager;
         private Dictionary<string, Game> offeredGames;
         private int tickDuration;
         private int numPlayers;
@@ -20,7 +19,7 @@ namespace OGP.Server
         private Dictionary<string, GameSession> gameSessions;
         private long lastTickTime;
 
-        public GameManager(ClusterManager clusterManager, ServerDefinition serverDefinition)
+        public GameManager(ServerDefinition serverDefinition)
         {
             Dictionary<string, Game> offeredGames = new Dictionary<string, Game>();
             foreach (string gameName in serverDefinition.SupportedGames)
@@ -36,7 +35,6 @@ namespace OGP.Server
                 }
             }
 
-            this.clusterManager = clusterManager;
             this.offeredGames = offeredGames;
             tickDuration = (int) serverDefinition.TickDuration;
             numPlayers = serverDefinition.NumPlayers;

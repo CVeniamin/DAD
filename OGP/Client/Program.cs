@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using OGP.Server;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Threading;
 
 namespace OGP.Client
 {
@@ -15,7 +16,7 @@ namespace OGP.Client
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             // Args received, ready to launch
             // argsOptions.ServiceURL
@@ -24,7 +25,7 @@ namespace OGP.Client
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new MainFrame("hello"));
+                Application.Run(new MainFrame(args));
             }
         }
     }

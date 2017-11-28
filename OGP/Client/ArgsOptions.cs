@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using System.Collections.Generic;
 
 namespace OGP.Client
 {
@@ -22,6 +23,9 @@ namespace OGP.Client
 
         [Option('f', "trace", Required = false)]
         public string TraceFile { get; set; }
+
+        [OptionList('s', "servers", Required = false)]
+        public IList<string> ServerEndpoints { get; set; }
 
     }
 }
