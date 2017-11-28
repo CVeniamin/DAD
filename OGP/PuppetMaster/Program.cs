@@ -30,8 +30,15 @@ namespace OGP.PuppetMaster
                     else
                     {
                         ICommand cmd = CommandParser.Command.Parse(input);
-                        bool result = cmd.Exec();
-                        Console.WriteLine(result);
+                        string result = cmd.Exec();
+                        if (result != String.Empty)
+                        {
+                            Console.WriteLine(result);
+                        }
+                        else
+                        {
+                            Console.WriteLine("OK");
+                        }
                     }
                 }
                 catch (ParseException ex)

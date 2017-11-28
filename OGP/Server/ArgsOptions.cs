@@ -4,6 +4,9 @@ namespace OGP.Server
 {
     internal class ArgsOptions
     {
+        [Option("pcs", Required = false, DefaultValue = 0)]
+        public string PCS { get; set; }
+
         [Option('p', "pid", Required = true)]
         public string PID { get; set; }
 

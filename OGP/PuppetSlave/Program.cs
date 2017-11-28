@@ -1,5 +1,4 @@
-﻿using OGP.PCS;
-using System;
+﻿using System;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -17,13 +16,13 @@ namespace OGP.PCS
             }
 
             int port = Int32.Parse(args[0]);
-            
+
             TcpChannel channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
 
             PcsManager manager = new PcsManager();
             RemotingServices.Marshal(manager, "PCS");
-            
+
             Console.WriteLine("PCS listening on port " + port);
             Console.ReadLine();
 

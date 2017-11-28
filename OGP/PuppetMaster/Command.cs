@@ -1,14 +1,12 @@
 ﻿using OGP.PCS;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 
 namespace OGP.PuppetMaster
 {
     internal interface ICommand
     {
-        bool Exec();
+        string Exec();
     }
 
     internal class StartClient : ICommand
@@ -30,7 +28,7 @@ namespace OGP.PuppetMaster
             this.filename = filename;
         }
 
-        public bool Exec()
+        public string Exec()
         {
             PcsManager pcs = PcsPool.GetByUrl(pcsUrl);
 
@@ -46,7 +44,7 @@ namespace OGP.PuppetMaster
             pcs.StartClient(pid, clientUrl, msecPerRound, numPlayers, filename, serverURLs);
             PcsPool.LinkPid(pid, pcsUrl);
 
-            return true;
+            return String.Empty;
         }
     }
 
@@ -68,16 +66,16 @@ namespace OGP.PuppetMaster
             this.numPlayers = numPlayers;
         }
 
-        public bool Exec()
+        public string Exec()
         {
             PcsManager pcs = PcsPool.GetByUrl(pcsUrl);
-            
+
             pcs.StartServer(pid, serverUrl, msecPerRound, numPlayers);
 
             ServerList.AddServer(serverUrl);
             PcsPool.LinkPid(pid, pcsUrl);
 
-            return true;
+            return String.Empty;
         }
     }
 
@@ -87,18 +85,18 @@ namespace OGP.PuppetMaster
         {
         }
 
-        public bool Exec()
+        public string Exec()
         {
             foreach (string pid in PcsPool.GetAllPids())
             {
                 PcsManager pcs = PcsPool.GetByPid(pid);
                 if (pcs != null)
                 {
-                    pcs.PrintStatus(pid);
+                    pcs.GlobalStatus(pid);
                 }
             }
 
-            return true;
+            return String.Empty;
         }
     }
 
@@ -111,7 +109,7 @@ namespace OGP.PuppetMaster
             this.pid = pid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
             PcsManager pcs = PcsPool.GetByPid(pid);
             if (pcs != null)
@@ -119,7 +117,7 @@ namespace OGP.PuppetMaster
                 pcs.Crash(pid);
             }
 
-            return true;
+            return String.Empty;
         }
     }
 
@@ -132,7 +130,7 @@ namespace OGP.PuppetMaster
             this.pid = pid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
             PcsManager pcs = PcsPool.GetByPid(pid);
             if (pcs != null)
@@ -140,7 +138,7 @@ namespace OGP.PuppetMaster
                 pcs.Freeze(pid);
             }
 
-            return true;
+            return String.Empty;
         }
     }
 
@@ -153,7 +151,7 @@ namespace OGP.PuppetMaster
             this.pid = pid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
             PcsManager pcs = PcsPool.GetByPid(pid);
             if (pcs != null)
@@ -161,14 +159,14 @@ namespace OGP.PuppetMaster
                 pcs.Unfreeze(pid);
             }
 
-            return true;
+            return String.Empty;
         }
     }
 
     internal class InjectDelay : ICommand
     {
-        string srcPid;
-        string dstPid;
+        private string srcPid;
+        private string dstPid;
 
         public InjectDelay(string srcPid, string dstPid)
         {
@@ -176,7 +174,7 @@ namespace OGP.PuppetMaster
             this.dstPid = dstPid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
             PcsManager pcs = PcsPool.GetByPid(srcPid);
             if (pcs != null)
@@ -184,35 +182,47 @@ namespace OGP.PuppetMaster
                 pcs.InjectDelay(srcPid, dstPid);
             }
 
-            return true;
+            return String.Empty;
         }
     }
 
     internal class LocalState : ICommand
     {
-        public LocalState(string pid, int roundID)
+        private string pid;
+        private int roundId;
+
+        public LocalState(string pid, int roundId)
         {
+            this.pid = pid;
+            this.roundId = roundId;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            return false;
+            PcsManager pcs = PcsPool.GetByPid(pid);
+            if (pcs != null)
+            {
+                return pcs.LocalState(pid, roundId);
+            }
+
+            return String.Empty;
         }
     }
 
     internal class Wait : ICommand
     {
-        int ms;
+        private int ms;
+
         public Wait(int ms)
         {
             this.ms = ms;
         }
 
-        public bool Exec()
+        public string Exec()
         {
             Thread.Sleep(ms);
 
-            return true;
+            return String.Empty;
         }
     }
 }

@@ -5,9 +5,12 @@ namespace OGP.Client
 {
     internal class ArgsOptions
     {
+        [Option("pcs", Required = false, DefaultValue = 0)]
+        public string PCS { get; set; }
+
         [Option('p', "PID", Required = true, DefaultValue = "1")]
         public string PID { get; set; }
-        
+
         [Option('c', "Client_URL", Required = true)]
         public string Client_URL { get; set; }
 
