@@ -112,5 +112,10 @@ namespace OGP.Server
             clients.Add(newClient);
             return newClient;
         }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 }

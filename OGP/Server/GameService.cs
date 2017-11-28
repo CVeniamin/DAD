@@ -51,5 +51,10 @@ namespace OGP.Server
             }
             return true;
         }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 }

@@ -24,12 +24,10 @@ namespace OGP.PCS
             PcsManager manager = new PcsManager();
             RemotingServices.Marshal(manager, "PCS");
             
+            Console.WriteLine("PCS listening on port " + port);
+            Console.ReadLine();
+
             return 0;
         }
-    }
-
-    public interface IHello
-    {
-        string Hello();
     }
 }

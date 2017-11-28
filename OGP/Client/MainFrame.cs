@@ -490,6 +490,11 @@ namespace OGP.Client
                     }
                 }
             }
+
+            public override object InitializeLifetimeService()
+            {
+                return null;
+            }
         }
     }
 }
