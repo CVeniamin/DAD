@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OGP.Server
 {
-
     public class GameService : MarshalByRefObject, IGameService
     {
-        System.Xml.Serialization.XmlSerializer serializer =
+        private System.Xml.Serialization.XmlSerializer serializer =
              new System.Xml.Serialization.XmlSerializer(typeof(Game));
 
         public bool AddGame(Game g)

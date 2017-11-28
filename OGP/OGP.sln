@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{83C731A4-F319-4D0F-B983-72A65145CB48}"
 EndProject
@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMaster", "PuppetMaster\PuppetMaster.csproj", "{FF615DFD-8202-4BD1-A36D-81E906D00BAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetSlave", "PuppetSlave\PuppetSlave.csproj", "{F38ED2FF-63A3-4FCF-BED0-67EACB8B6593}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PCS", "PuppetSlave\PCS.csproj", "{F38ED2FF-63A3-4FCF-BED0-67EACB8B6593}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

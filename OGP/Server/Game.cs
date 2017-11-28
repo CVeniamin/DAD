@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 
 namespace OGP.Server
 {
     public interface IGame
     {
         bool GameOver { get; set; }
+
         void Init();
+
         void MoveLeft();
+
         void MoveRight();
+
         void MoveUp();
+
         void MoveDown();
+
         void RegisterClient(string url);
     }
 
@@ -23,7 +28,8 @@ namespace OGP.Server
     [Serializable]
     public class GameClient
     {
-        String URL { get; set; }
+        private String URL { get; set; }
+
         public GameClient(String url)
         {
             this.URL = url;
@@ -36,13 +42,15 @@ namespace OGP.Server
         private int tickDuration;
         private short minimumPlayers = 1;
         private int gameID;
-        
+
         public List<GameClient> GameClients { get => gameClients; set => gameClients = value; }
         public int TickDuration { get => tickDuration; set => tickDuration = value; }
         public short MinimumPlayers { get; set; }
         public int GameID { get => gameID; set => gameID = value; }
 
-        public Game() { }
+        public Game()
+        {
+        }
 
         public Game(int tickDuration, short minimumPlayers, int gameID)
         {

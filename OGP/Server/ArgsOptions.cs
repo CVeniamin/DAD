@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using CommandLine;
+﻿using CommandLine;
 
 namespace OGP.Server
 {
@@ -19,6 +18,5 @@ namespace OGP.Server
 
         [Option('n', "NUM_PLAYERS", DefaultValue = 5)]
         public int NumPlayers { get; set; }
-
     }
 }

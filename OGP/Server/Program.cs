@@ -1,5 +1,4 @@
-﻿using OGP.PuppetSlave;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
@@ -12,6 +11,7 @@ namespace OGP.Server
     {
         //private GameService gameService;
         private static ChatManager chatManager;
+
         private static void RegisterServices()
         {
             RemotingConfiguration.RegisterWellKnownServiceType(
@@ -32,7 +32,6 @@ namespace OGP.Server
 
         private static void Main(string[] args)
         {
-
             var argsOptions = new ArgsOptions();
             if (CommandLine.Parser.Default.ParseArguments(args, argsOptions))
             {
@@ -49,7 +48,7 @@ namespace OGP.Server
 
                 Thread t = new Thread(() => WaitForPlayers(argsOptions));
                 t.Start();
-                
+
                 //// Load requested games
                 //List<string> supportedGames = new List<string>();
                 //foreach (string gameName in argsOptions.Games)
@@ -57,7 +56,7 @@ namespace OGP.Server
                 //    if (Type.GetType("OGP.Server.Games." + gameName) != null)
                 //    {
                 //        supportedGames.Add(gameName);
-                //    } else { 
+                //    } else {
                 //        Console.WriteLine("Following game is not supported: {0}", gameName);
                 //    }
                 //}
@@ -91,9 +90,9 @@ namespace OGP.Server
         }
     }
 
-    class ChatManager : MarshalByRefObject, IChatManager
+    internal class ChatManager : MarshalByRefObject, IChatManager
     {
-        List<IChatClient> clients;
+        private List<IChatClient> clients;
 
         public ChatManager()
         {
@@ -102,7 +101,6 @@ namespace OGP.Server
 
         public List<IChatClient> getClients()
         {
-
             //TODO: server needs to push the list of clients for each client after all clients are connected
             return clients;
         }
@@ -114,6 +112,5 @@ namespace OGP.Server
             clients.Add(newClient);
             return newClient;
         }
-
     }
 }

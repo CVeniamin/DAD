@@ -5,7 +5,6 @@ namespace OGP.Client
 {
     internal class ArgsOptions
     {
-
         [Option('p', "PID", Required = true, DefaultValue = "1")]
         public string PID { get; set; }
 
@@ -26,6 +25,5 @@ namespace OGP.Client
 
         [OptionList('s', "servers", Required = false)]
         public IList<string> ServerEndpoints { get; set; }
-
     }
 }

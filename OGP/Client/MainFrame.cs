@@ -1,72 +1,73 @@
-﻿using OGP.PuppetSlave;
-using OGP.Server;
+﻿using OGP.Server;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Threading;
-using System.Runtime.Remoting;
+using System.Windows.Forms;
 
 namespace OGP.Client
 {
     public partial class MainFrame : Form
     {
         // direction player is moving in. Only one will be true
-        bool goup;
-        bool godown;
-        bool goleft;
-        bool goright;
+        private bool goup;
 
-        int boardRight = 320;
-        int boardBottom = 320;
-        int boardLeft = 0;
-        int boardTop = 40;
+        private bool godown;
+        private bool goleft;
+        private bool goright;
+
+        private int boardRight = 320;
+        private int boardBottom = 320;
+        private int boardLeft = 0;
+        private int boardTop = 40;
+
         //player speed
-        int speed = 5;
+        private int speed = 5;
 
-        int score = 0; int total_coins = 61;
+        private int score = 0; private int total_coins = 61;
 
         //ghost speed for the one direction ghosts
-        int ghost1 = 5;
-        int ghost2 = 5;
+        private int ghost1 = 5;
+
+        private int ghost2 = 5;
 
         //x and y directions for the bi-direccional pink ghost
-        int ghost3x = 5;
-        int ghost3y = 5;
+        private int ghost3x = 5;
 
+        private int ghost3y = 5;
 
-        // This delegate enables asynchronous calls for setting  
-        // the text property on a TextBox control.  
-        delegate void SetTextDelegate(string text);
+        // This delegate enables asynchronous calls for setting
+        // the text property on a TextBox control.
+        private delegate void SetTextDelegate(string text);
+
         private Thread chatThread = null;
+
         private void ThreadProcSafe(string text)
         {
             this.SetText(text);
         }
 
-        // This method demonstrates a pattern for making thread-safe  
-        // calls on a Windows Forms control.   
-        //  
-        // If the calling thread is different from the thread that  
-        // created the TextBox control, this method creates a  
-        // StringArgReturningVoidDelegate and calls itself asynchronously using the  
-        // Invoke method.  
-        //  
-        // If the calling thread is the same as the thread that created  
-        // the TextBox control, the Text property is set directly.   
+        // This method demonstrates a pattern for making thread-safe
+        // calls on a Windows Forms control.
+        //
+        // If the calling thread is different from the thread that
+        // created the TextBox control, this method creates a
+        // StringArgReturningVoidDelegate and calls itself asynchronously using the
+        // Invoke method.
+        //
+        // If the calling thread is the same as the thread that created
+        // the TextBox control, the Text property is set directly.
 
         private void SetText(string text)
         {
-            // InvokeRequired required compares the thread ID of the  
-            // calling thread to the thread ID of the creating thread.  
-            // If these threads are different, it returns true.  
+            // InvokeRequired required compares the thread ID of the
+            // calling thread to the thread ID of the creating thread.
+            // If these threads are different, it returns true.
             if (this.tbChat.InvokeRequired)
             {
                 SetTextDelegate d = new SetTextDelegate(SetText);
@@ -96,7 +97,7 @@ namespace OGP.Client
             List<string> namesList = new List<string>(serverURLS.Length);
             namesList.AddRange(serverURLS);
             List<Uri> serversURIs = new List<Uri>();
-            foreach(var n in namesList)
+            foreach (var n in namesList)
             {
                 serversURIs.Add(new Uri(n));
             }
@@ -112,7 +113,7 @@ namespace OGP.Client
             chatClient = new ChatClient(this);
             RemotingServices.Marshal(chatClient, "ChatClient");
 
-            chatManager = (IChatManager) Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
+            chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
 
             chatManager.RegisterClient(clientURL);
             chatClient.Clients = chatManager.getClients();
@@ -133,12 +134,12 @@ namespace OGP.Client
                 //TODO: send to server moveRight
                 goright = true;
                 int i = 1;
-                foreach(var v in chatClient.Clients)
+                foreach (var v in chatClient.Clients)
                 {
                     tbChat.Text += i.ToString();
                     i++;
                 }
-                
+
                 pacman.Image = Properties.Resources.Right;
             }
             if (e.KeyCode == Keys.Up)
@@ -152,7 +153,6 @@ namespace OGP.Client
                 //TODO: send to server moveDown
                 godown = true;
                 pacman.Image = Properties.Resources.down;
-
             }
             if (e.KeyCode == Keys.Enter)
             {
@@ -169,7 +169,6 @@ namespace OGP.Client
             if (e.KeyCode == Keys.Right)
             {
                 goright = false;
-
             }
             if (e.KeyCode == Keys.Up)
             {
@@ -227,7 +226,7 @@ namespace OGP.Client
             foreach (Control x in this.Controls)
             {
                 // checking if the player hits the wall or the ghost, then game is over
-                if (x is PictureBox && (string) x.Tag == "wall" || (string) x.Tag == "ghost")
+                if (x is PictureBox && (string)x.Tag == "wall" || (string)x.Tag == "ghost")
                 {
                     if (((PictureBox)x).Bounds.IntersectsWith(pacman.Bounds))
                     {
@@ -238,7 +237,7 @@ namespace OGP.Client
                         timer1.Stop();
                     }
                 }
-                if (x is PictureBox && (string) x.Tag == "coin")
+                if (x is PictureBox && (string)x.Tag == "coin")
                 {
                     if (((PictureBox)x).Bounds.IntersectsWith(pacman.Bounds))
                     {
@@ -272,7 +271,6 @@ namespace OGP.Client
             {
                 ghost3y = -ghost3y;
             }
-
         }
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e)
@@ -286,13 +284,12 @@ namespace OGP.Client
 
         private void redGhost_Click(object sender, EventArgs e)
         {
-
         }
 
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
-        
+
         private PictureBox[] coinsArray = Enumerable.Repeat(0, 41).Select(c => new PictureBox()).ToArray();
         private PictureBox[] wallsArray = Enumerable.Repeat(0, 4).Select(w => new PictureBox()).ToArray();
 
@@ -327,13 +324,13 @@ namespace OGP.Client
                 tabIndex++;
 
                 ((System.ComponentModel.ISupportInitialize)(coinsArray[i])).BeginInit();
-
             }
         }
+
         /// <summary>
-        /// Method used to draw a ghost give a Object, name, resource and x,y 
+        /// Method used to draw a ghost give a Object, name, resource and x,y
         /// </summary>
-        /// 
+        ///
         private void DrawGhost(PictureBox ghost, string ghostname, Bitmap ghostResource, int x, int y)
         {
             ghost.BackColor = Color.Transparent;
@@ -407,7 +404,6 @@ namespace OGP.Client
             this.Controls.Add(this.yellowGhost);
             this.Controls.Add(this.redGhost);
 
-
             DrawCoins();
 
             void addControlFor(PictureBox[] array)
@@ -442,7 +438,7 @@ namespace OGP.Client
             tbChat.Text += "\r\n" + s;
         }
 
-        delegate void DelAddMsg(string mensagem);
+        private delegate void DelAddMsg(string mensagem);
 
         public class ChatClient : MarshalByRefObject, IChatClient
         {
@@ -454,8 +450,8 @@ namespace OGP.Client
                 form.Invoke(new DelAddMsg(form.AddMsg), mensagem);
             }
 
-            List<IChatClient> clients;
-            List<string> messages;
+            private List<IChatClient> clients;
+            private List<string> messages;
 
             public List<IChatClient> Clients { get => clients; set => clients = value; }
 
@@ -485,7 +481,7 @@ namespace OGP.Client
                 {
                     try
                     {
-                        ((IChatClient) Clients[i]).MsgToClient(MsgToBcast);
+                        ((IChatClient)Clients[i]).MsgToClient(MsgToBcast);
                     }
                     catch (Exception e)
                     {
@@ -496,5 +492,4 @@ namespace OGP.Client
             }
         }
     }
-    
 }

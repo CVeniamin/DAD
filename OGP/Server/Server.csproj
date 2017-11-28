@@ -95,9 +95,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PuppetSlave\PuppetSlave.csproj">
+    <ProjectReference Include="..\PuppetSlave\PCS.csproj">
       <Project>{f38ed2ff-63a3-4fcf-bed0-67eacb8b6593}</Project>
-      <Name>PuppetSlave</Name>
+      <Name>PCS</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

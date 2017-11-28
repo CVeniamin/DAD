@@ -1,16 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using OGP.Server;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting.Channels.Tcp;
-using System.Threading;
 
 namespace OGP.Client
 {
-    class Program
+    internal class Program
     {
         /// <summary>
         /// The main entry point for the application.
