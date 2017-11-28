@@ -1,14 +1,30 @@
-﻿namespace OGP.PCS
+﻿using OGP.PCS;
+using System;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Tcp;
+
+namespace OGP.PCS
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static int Main(string[] args)
         {
-            // Use this to set the process name for server/client
-            // Process p = Process.Start("server/client.exe");
-            // while (p.MainWindowHandle == IntPtr.Zero)
-            // Application.DoEvents();
-            // SetWindowText(p.MainWindowHandle, "OGP Server/Client [PID]");
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Port number required");
+                return 1;
+            }
+
+            int port = Int32.Parse(args[0]);
+            
+            TcpChannel channel = new TcpChannel(port);
+            ChannelServices.RegisterChannel(channel, true);
+
+            PcsManager manager = new PcsManager();
+            RemotingServices.Marshal(manager, "PCS");
+            
+            return 0;
         }
     }
 

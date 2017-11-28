@@ -37,6 +37,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Remoting" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,20 +48,23 @@
   <ItemGroup>
     <Compile Include="Command.cs" />
     <Compile Include="CommandParser.cs" />
+    <Compile Include="PcsPool.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerList.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Connected Services\" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Client\Client.csproj">
       <Project>{22b2b4cc-4bfc-42be-968d-0cf06a93ca4a}</Project>
       <Name>Client</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PuppetSlave\PCS.csproj">
+      <Project>{F38ED2FF-63A3-4FCF-BED0-67EACB8B6593}</Project>
+      <Name>PCS</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

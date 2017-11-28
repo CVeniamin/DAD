@@ -7,10 +7,7 @@ namespace OGP.Client
     {
         [Option('p', "PID", Required = true, DefaultValue = "1")]
         public string PID { get; set; }
-
-        [Option('u', "PCS_URL", Required = true)]
-        public string PCS_URL { get; set; }
-
+        
         [Option('c', "Client_URL", Required = true)]
         public string Client_URL { get; set; }
 

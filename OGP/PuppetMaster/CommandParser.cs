@@ -62,7 +62,7 @@ namespace OGP.PuppetMaster
         private static readonly Parser<ICommand> Wait =
             (from cmd in Parse.String("Wait").Token()
              from ms in Number
-             select (ICommand)new Wait(Int64.Parse(ms)));
+             select (ICommand)new Wait(Int32.Parse(ms)));
 
         public static Parser<ICommand> Command = (StartClient).Or(StartServer)
             .Or(GlobalStatus).Or(Crash).Or(Freeze).Or(Unfreeze).Or(InjectDelay)
