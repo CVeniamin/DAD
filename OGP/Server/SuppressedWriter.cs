@@ -23,12 +23,13 @@ namespace OGP.Server
             if ((string)arg0 == "PCS_REPLY" || (string)arg0 == "CRITICAL")
             {
                 originalOut.WriteLine(value);
-            } else
+            }
+            else
             {
                 Console.Error.WriteLine(value, arg0);
             }
         }
-        
+
         public override Encoding Encoding => Encoding.ASCII;
     }
 }

@@ -23,7 +23,7 @@ namespace OGP.Client
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new MainFrame(args));
-                
+
                 // Start listening for input
                 while (true)
                 {

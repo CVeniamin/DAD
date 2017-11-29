@@ -32,7 +32,8 @@ namespace OGP.PuppetMaster
                     else
                     {
                         ICommand cmd = CommandParser.Command.Parse(input);
-                        try {
+                        try
+                        {
                             string result = cmd.Exec();
                             if (result != String.Empty)
                             {
@@ -49,7 +50,9 @@ namespace OGP.PuppetMaster
                             {
                                 Console.WriteLine("Command execution failed. Connection to PCS lost. Exiting.");
                                 break;
-                            } else {
+                            }
+                            else
+                            {
                                 Console.WriteLine("Command execution error.");
                             }
                         }

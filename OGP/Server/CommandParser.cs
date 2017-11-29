@@ -6,7 +6,7 @@ namespace OGP.Server
     internal class CommandParser
     {
         private static readonly Parser<string> Number = Parse.Digit.AtLeastOnce().Text().Token();
-        
+
         private static readonly Parser<ICommand> GlobalStatus =
             (from cmd in Parse.String("GlobalStatus").Token()
              select (ICommand)new GlobalStatus());
@@ -28,7 +28,7 @@ namespace OGP.Server
         private static readonly Parser<ICommand> Freeze =
             (from cmd in Parse.String("Freeze").Token()
              select (ICommand)new Freeze());
-        
+
         public static Parser<ICommand> Command = (GlobalStatus).Or(LocalState)
             .Or(InjectDelay).Or(Unfreeze).Or(Freeze);
     }

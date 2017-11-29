@@ -1,6 +1,4 @@
-﻿using OGP.PCS;
-using System;
-using System.Threading;
+﻿using System;
 
 namespace OGP.Client
 {

@@ -9,7 +9,7 @@ namespace OGP.Server
 
         [Option('p', Required = true)]
         public string Pid { get; set; }
-        
+
         [Option('s', Required = true)]
         public string ServerUrl { get; set; }
 

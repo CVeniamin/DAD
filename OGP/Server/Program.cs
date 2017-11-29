@@ -26,7 +26,7 @@ namespace OGP.Server
 
             chatManager = new ChatManager();
             RemotingServices.Marshal(chatManager, "ChatManager");
-        
+
             //RemotingConfiguration.RegisterWellKnownServiceType(
             //    typeof(ChatServerServices), "ChatServer",
             //    WellKnownObjectMode.Singleton);
@@ -84,7 +84,6 @@ namespace OGP.Server
                 //    return;
                 //}
 
-
                 // Start listening for input
                 while (true)
                 {
@@ -110,7 +109,6 @@ namespace OGP.Server
         {
             while (chatManager.getClients().Count < argsOptions.NumPlayers)
             {
-                
                 Thread.Sleep(1000);
             }
 

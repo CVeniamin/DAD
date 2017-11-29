@@ -1,6 +1,4 @@
-﻿using OGP.PCS;
-using System;
-using System.Threading;
+﻿using System;
 
 namespace OGP.Server
 {
@@ -8,7 +6,7 @@ namespace OGP.Server
     {
         string Exec(object arg0);
     }
-    
+
     internal class GlobalStatus : ICommand
     {
         public string Exec(object arg0)
