@@ -35,6 +35,11 @@ namespace OGP.Server
             var argsOptions = new ArgsOptions();
             if (CommandLine.Parser.Default.ParseArguments(args, argsOptions))
             {
+                if (argsOptions.PCS == "1")
+                {
+                    Console.SetOut(new SuppressedWriter());
+                }
+
                 Console.WriteLine("Started Server with PID: " + argsOptions.PID);
                 // change usingSingleton to false to use Marshal activation
                 Uri uri = new Uri(argsOptions.Server_URL);

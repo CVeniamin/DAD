@@ -55,7 +55,6 @@ namespace OGP.PuppetMaster
         private String serverUrl;
         private int msecPerRound;
         private int numPlayers;
-        private String filename;
 
         public StartServer(string pid, string pcsUrl, string serverUrl, int msecPerRound, int numPlayers)
         {

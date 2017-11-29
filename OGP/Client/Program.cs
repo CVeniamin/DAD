@@ -5,9 +5,6 @@ namespace OGP.Client
 {
     internal class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
         public static void Main(string[] args)
         {
@@ -16,6 +13,11 @@ namespace OGP.Client
             var argsOptions = new ArgsOptions();
             if (CommandLine.Parser.Default.ParseArguments(args, argsOptions))
             {
+                if (argsOptions.PCS == "1")
+                {
+                    Console.SetOut(new SuppressedWriter());
+                }
+
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new MainFrame(args));
