@@ -90,7 +90,7 @@ namespace OGP.Client
             //only works without filename provided
             string clientURL = args[5];
             Uri clientUri = new Uri(clientURL);
-            //string clientHostName = clientUri.ToString().Replace(clientUri.PathAndQuery, "");
+            string clientHostName = clientUri.ToString().Replace(clientUri.PathAndQuery, "");
 
             string serverURL = args[11];
             string[] serverURLS = serverURL.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
@@ -104,18 +104,23 @@ namespace OGP.Client
 
             string serverHostName = serversURIs[0].ToString().Replace(serversURIs[0].PathAndQuery, "");
 
-            this.chatThread = new Thread(() => ThreadProcSafe(serverHostName));
+            this.chatThread = new Thread(() => ThreadProcSafe(clientHostName));
             this.chatThread.Start();
 
             TcpChannel channel = new TcpChannel(clientUri.Port);
             ChannelServices.RegisterChannel(channel, true);
 
-            chatClient = new ChatClient(this);
+            string pid = args[1];
+            chatClient = new ChatClient(this, pid);
+
+            this.chatThread = new Thread(() => ThreadProcSafe(chatClient.Pid));
+            this.chatThread.Start();
+
             RemotingServices.Marshal(chatClient, "ChatClient");
 
             chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
 
-            chatManager.RegisterClient(clientURL);
+            chatManager.RegisterClient(clientHostName);
             chatClient.Clients = chatManager.getClients();
 
             label2.Visible = false;
@@ -452,14 +457,17 @@ namespace OGP.Client
 
             private List<IChatClient> clients;
             private List<string> messages;
+            private string pid;
 
             public List<IChatClient> Clients { get => clients; set => clients = value; }
+            public string Pid { get => pid; set => pid = value; }
 
-            public ChatClient(MainFrame mf)
+            public ChatClient(MainFrame mf, string p )
             {
                 Clients = new List<IChatClient>();
                 messages = new List<string>();
                 form = mf;
+                pid = p;
             }
 
             public void SendMsg(string mensagem)
@@ -477,16 +485,20 @@ namespace OGP.Client
                 {
                     MsgToBcast = messages[messages.Count - 1];
                 }
-                for (int i = 0; i < Clients.Count; i++)
+                for (int i = 0; i < clients.Count; i++)
                 {
                     try
                     {
-                        ((IChatClient)Clients[i]).MsgToClient(MsgToBcast);
+                        //ChatClient cc = (ChatClient) clients[i];
+                        //MsgToClient(cc.pid);
+                        //cc.MsgToClient(MsgToBcast);
+                        ((IChatClient)clients[i]).MsgToClient(MsgToBcast);
                     }
                     catch (Exception e)
                     {
-                        MsgToClient("An error Occurred " + e);
-                        Clients.RemoveAt(i);
+
+                        MsgToClient(e.ToString());
+                        clients.RemoveAt(i);
                     }
                 }
             }
