@@ -8,12 +8,12 @@ namespace OGP.Client
         [STAThread]
         public static void Main(string[] args)
         {
-            // Args received, ready to launch
-            // argsOptions.ServiceURL
             var argsOptions = new ArgsOptions();
             if (CommandLine.Parser.Default.ParseArguments(args, argsOptions))
             {
-                if (argsOptions.PCS == "1")
+                Console.WriteLine(argsOptions.Pcs);
+
+                if (argsOptions.Pcs != null)
                 {
                     Console.SetOut(new SuppressedWriter());
                 }

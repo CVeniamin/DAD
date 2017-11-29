@@ -24,7 +24,7 @@ namespace OGP.Server
 
             chatManager = new ChatManager();
             RemotingServices.Marshal(chatManager, "ChatManager");
-
+        
             //RemotingConfiguration.RegisterWellKnownServiceType(
             //    typeof(ChatServerServices), "ChatServer",
             //    WellKnownObjectMode.Singleton);
@@ -35,19 +35,21 @@ namespace OGP.Server
             var argsOptions = new ArgsOptions();
             if (CommandLine.Parser.Default.ParseArguments(args, argsOptions))
             {
-                if (argsOptions.PCS == "1")
+                Console.WriteLine(argsOptions.Pcs);
+
+                if (argsOptions.Pcs != null)
                 {
                     Console.SetOut(new SuppressedWriter());
                 }
 
-                Console.WriteLine("Started Server with PID: " + argsOptions.PID);
+                Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
                 // change usingSingleton to false to use Marshal activation
-                Uri uri = new Uri(argsOptions.Server_URL);
+                Uri uri = new Uri(argsOptions.ServerUrl);
                 TcpChannel channel = new TcpChannel(uri.Port);
                 ChannelServices.RegisterChannel(channel, true);
 
                 RegisterServices();
-                Console.WriteLine("Server Registered at " + argsOptions.Server_URL);
+                Console.WriteLine("Server Registered at " + argsOptions.ServerUrl);
                 Console.WriteLine("Server Port at " + uri.Port);
                 Console.WriteLine("Waiting for players to join...");
 
