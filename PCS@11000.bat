@@ -1,0 +1,1 @@
+START %~dp0debug\PCS.exe 11000

@@ -1,74 +1,88 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using OGP.PCS;
+using System;
+using System.Threading;
 
 namespace OGP.PuppetMaster
 {
     internal interface ICommand
     {
-        bool Exec();
-    }
-
-    public class Endpoint
-    {
-        private static List<string> servers = null;
-
-        public Endpoint(string url)
-        {
-            if (servers == null)
-            {
-                servers = new List<string>();
-            }
-            servers.Add(url);
-        }
-
-        public static List<string> Servers { get => servers; set => servers = value; }
+        string Exec();
     }
 
     internal class StartClient : ICommand
     {
-        private String args;
+        private String pid;
+        private String pcsUrl;
+        private String clientUrl;
+        private int msecPerRound;
+        private int numPlayers;
+        private String filename;
 
-        public StartClient(string pid, string pcsURL, string clientURL, int msecPerRound, int numPlayers, string filename)
+        public StartClient(string pid, string pcsUrl, string clientUrl, int msecPerRound, int numPlayers, string filename)
         {
-            args = "-p " + pid + " -u " + pcsURL + " -c " + clientURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
-
-            if (!(filename == null || filename == String.Empty))
-            {
-                args += " -f " + filename;
-            }
-            if (Endpoint.Servers.Count > 0)
-            {
-                args += " -s ";
-                foreach (var serverURL in Endpoint.Servers)
-                {
-                    args += serverURL + ",";
-                }
-            }
+            this.pid = pid;
+            this.pcsUrl = pcsUrl;
+            this.clientUrl = clientUrl;
+            this.msecPerRound = msecPerRound;
+            this.numPlayers = numPlayers;
+            this.filename = filename;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            Process.Start("Client.exe", args);
-            Console.WriteLine(args);
-            return true;
+            PcsManager pcs = PcsPool.GetByUrl(pcsUrl);
+
+            string serverURLs = String.Join(",", ServerList.Servers);
+
+            bool result = pcs.StartClient(pid, clientUrl, msecPerRound, numPlayers, filename, serverURLs);
+
+            if (result == true)
+            {
+                PcsPool.LinkPid(pid, pcsUrl);
+
+                return String.Empty;
+            }
+            else
+            {
+                return "Error - process not started";
+            }
         }
     }
 
     internal class StartServer : ICommand
     {
-        private String args;
+        private String pid;
+        private String pcsUrl;
+        private String serverUrl;
+        private int msecPerRound;
+        private int numPlayers;
 
-        public StartServer(string pid, string pcsURL, string serverURL, int msecPerRound, int numPlayers)
+        public StartServer(string pid, string pcsUrl, string serverUrl, int msecPerRound, int numPlayers)
         {
-            args = "-p " + pid + " -u " + pcsURL + " -s " + serverURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
-            new Endpoint(serverURL);
+            this.pid = pid;
+            this.pcsUrl = pcsUrl;
+            this.serverUrl = serverUrl;
+            this.msecPerRound = msecPerRound;
+            this.numPlayers = numPlayers;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            Process.Start("Server.exe", args);
-            return true;
+            PcsManager pcs = PcsPool.GetByUrl(pcsUrl);
+
+            bool result = pcs.StartServer(pid, serverUrl, msecPerRound, numPlayers);
+
+            if (result == true)
+            {
+                ServerList.AddServer(serverUrl);
+                PcsPool.LinkPid(pid, pcsUrl);
+
+                return String.Empty;
+            }
+            else
+            {
+                return "Error - process not started";
+            }
         }
     }
 
@@ -78,89 +92,144 @@ namespace OGP.PuppetMaster
         {
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            return false;
+            foreach (string pid in PcsPool.GetAllPids())
+            {
+                PcsManager pcs = PcsPool.GetByPid(pid);
+                if (pcs != null)
+                {
+                    pcs.GlobalStatus(pid);
+                }
+            }
+
+            return String.Empty;
         }
     }
 
     internal class Crash : ICommand
     {
+        private string pid;
+
         public Crash(string pid)
         {
+            this.pid = pid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            return false;
+            PcsManager pcs = PcsPool.GetByPid(pid);
+            if (pcs != null)
+            {
+                pcs.Crash(pid);
+            }
+
+            return String.Empty;
         }
     }
 
     internal class Freeze : ICommand
     {
-        private string _pid;
+        private string pid;
 
         public Freeze(string pid)
         {
-            _pid = pid;
+            this.pid = pid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            Console.WriteLine("Freezing {0}", _pid);
-            return false;
+            PcsManager pcs = PcsPool.GetByPid(pid);
+            if (pcs != null)
+            {
+                pcs.Freeze(pid);
+            }
+
+            return String.Empty;
         }
     }
 
     internal class Unfreeze : ICommand
     {
-        private string _pid;
+        private string pid;
 
         public Unfreeze(string pid)
         {
-            _pid = pid;
+            this.pid = pid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            Console.WriteLine("Unfreezing {0}", _pid);
-            return false;
+            PcsManager pcs = PcsPool.GetByPid(pid);
+            if (pcs != null)
+            {
+                pcs.Unfreeze(pid);
+            }
+
+            return String.Empty;
         }
     }
 
     internal class InjectDelay : ICommand
     {
+        private string srcPid;
+        private string dstPid;
+
         public InjectDelay(string srcPid, string dstPid)
         {
+            this.srcPid = srcPid;
+            this.dstPid = dstPid;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            return false;
+            PcsManager pcs = PcsPool.GetByPid(srcPid);
+            if (pcs != null)
+            {
+                pcs.InjectDelay(srcPid, dstPid);
+            }
+
+            return String.Empty;
         }
     }
 
     internal class LocalState : ICommand
     {
-        public LocalState(string pid, int roundID)
+        private string pid;
+        private int roundId;
+
+        public LocalState(string pid, int roundId)
         {
+            this.pid = pid;
+            this.roundId = roundId;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            return false;
+            PcsManager pcs = PcsPool.GetByPid(pid);
+            if (pcs != null)
+            {
+                return pcs.LocalState(pid, roundId);
+            }
+
+            return String.Empty;
         }
     }
 
     internal class Wait : ICommand
     {
-        public Wait(long ms)
+        private int ms;
+
+        public Wait(int ms)
         {
+            this.ms = ms;
         }
 
-        public bool Exec()
+        public string Exec()
         {
-            return false;
+            Thread.Sleep(ms);
+
+            return String.Empty;
         }
     }
 }

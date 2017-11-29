@@ -32,7 +32,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -41,7 +41,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\dist\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -53,8 +53,8 @@
     <Reference Include="RSG.Promise, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RSG.Promise.1.3.0\lib\net35\RSG.Promise.dll</HintPath>
     </Reference>
-    <Reference Include="Rssdp, Version=3.5.7.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rssdp.3.5.7\lib\net45\Rssdp.dll</HintPath>
+    <Reference Include="Sprache, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Sprache.2.1.0\lib\net40\Sprache.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,6 +70,8 @@
   <ItemGroup>
     <Compile Include="ArgsOptions.cs" />
     <Compile Include="ChatManager.cs" />
+    <Compile Include="Command.cs" />
+    <Compile Include="CommandParser.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="GameNotFoundException.cs" />
     <Compile Include="GameService.cs" />
@@ -77,6 +79,7 @@
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SuppressedWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

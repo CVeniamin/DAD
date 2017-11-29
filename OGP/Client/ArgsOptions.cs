@@ -5,25 +5,25 @@ namespace OGP.Client
 {
     internal class ArgsOptions
     {
-        [Option('p', "PID", Required = true, DefaultValue = "1")]
-        public string PID { get; set; }
+        [Option('d')]
+        public bool Pcs { get; set; }
 
-        [Option('u', "PCS_URL", Required = true)]
-        public string PCS_URL { get; set; }
+        [Option('p', Required = true)]
+        public string Pid { get; set; }
 
-        [Option('c', "Client_URL", Required = true)]
-        public string Client_URL { get; set; }
+        [Option('c', Required = true)]
+        public string ClientUrl { get; set; }
 
-        [Option('m', "MSEC_PER_OUND", DefaultValue = 200, Required = true)]
+        [Option('m', DefaultValue = 200, Required = true)]
         public int TickDuration { get; set; }
 
-        [Option('n', "NUM_PLAYERS", DefaultValue = 5, Required = true)]
+        [Option('n', DefaultValue = 5, Required = true)]
         public int NumPlayers { get; set; }
 
-        [Option('f', "trace", Required = false)]
+        [Option('f')]
         public string TraceFile { get; set; }
 
-        [OptionList('s', "servers", Required = false)]
+        [OptionList('s', Required = true)]
         public IList<string> ServerEndpoints { get; set; }
     }
 }

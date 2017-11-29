@@ -97,5 +97,10 @@ namespace OGP.Server
             this.GameClients.Add(new GameClient(url));
             Console.WriteLine("Added new client at: " + url);
         }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 }
