@@ -20,7 +20,7 @@ namespace OGP.Server
 
         public override void Write(string value, object arg0)
         {
-            if ((string)arg0 == "PCS_REPLY")
+            if ((string)arg0 == "PCS_REPLY" || (string)arg0 == "CRITICAL")
             {
                 originalOut.WriteLine(value);
             } else

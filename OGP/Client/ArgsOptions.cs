@@ -5,8 +5,8 @@ namespace OGP.Client
 {
     internal class ArgsOptions
     {
-        [Option]
-        public bool? Pcs { get; set; }
+        [Option('d')]
+        public bool Pcs { get; set; }
 
         [Option('p', Required = true)]
         public string Pid { get; set; }
@@ -23,7 +23,7 @@ namespace OGP.Client
         [Option('f')]
         public string TraceFile { get; set; }
 
-        [OptionList('s')]
+        [OptionList('s', Required = true)]
         public IList<string> ServerEndpoints { get; set; }
     }
 }

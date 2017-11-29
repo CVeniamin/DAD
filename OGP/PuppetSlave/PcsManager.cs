@@ -19,9 +19,31 @@ namespace OGP.PCS
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool SetWindowText(IntPtr hwnd, String lpString);
 
-        public void StartServer(string pid, string serverUrl, int msecPerRound, int numPlayers)
+        private bool WaitForProcess(Process proc)
         {
-            String args = "--pcs -p " + pid + " -s " + serverUrl + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
+            int delaySeconds = 0;
+            while (delaySeconds < 5)
+            {
+                try
+                {
+                    var time = proc.StartTime;
+                    break;
+                }
+                catch (Exception) { }
+
+                Console.WriteLine("Starting...");
+                Thread.Sleep(1000);
+                delaySeconds++;
+
+                proc.Refresh();
+            }
+
+            return delaySeconds < 5;
+        }
+
+        public bool StartServer(string pid, string serverUrl, int msecPerRound, int numPlayers)
+        {
+            String args = "-d -pp " + pid + " -s " + serverUrl + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
 
             Console.WriteLine("Starting Server with args: " + args);
 
@@ -33,15 +55,24 @@ namespace OGP.PCS
             server.StartInfo.RedirectStandardOutput = true;
             server.Start();
 
-            Task.Delay(1000).ContinueWith(t =>
+            bool launchSuccess = WaitForProcess(server);
+
+            if (launchSuccess == true)
             {
-                while (server.MainWindowHandle == IntPtr.Zero)
-                    Thread.Sleep(1000);
-                SetWindowText(server.MainWindowHandle, "OGP Server " + pid);
-            });
+                Console.WriteLine("Server Process ready ({0})", server.Id);
+                processes.Add(pid, server);
+
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Server process could not start");
+
+                return false;
+            }
         }
 
-        public void StartClient(string pid, string clientURL, int msecPerRound, int numPlayers, string filename, string serverUrls)
+        public bool StartClient(string pid, string clientURL, int msecPerRound, int numPlayers, string filename, string serverUrls)
         {
             String args = "--pcs -p " + pid + " -c " + clientURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
 
@@ -62,14 +93,24 @@ namespace OGP.PCS
             client.StartInfo.RedirectStandardOutput = true;
             client.Start();
 
-            Task.Delay(1000).ContinueWith(t =>
-            {
-                while (client.MainWindowHandle == IntPtr.Zero)
-                    Thread.Sleep(1000);
-                SetWindowText(client.MainWindowHandle, "OGP Client " + pid);
-            });
+            bool launchSuccess = WaitForProcess(client);
 
-            processes.Add(pid, client);
+            if (launchSuccess == true)
+            {
+                Console.WriteLine("Client Process ready ({0})", client.Id);
+
+                processes.Remove(pid); // Prevent error for duplicate key
+                // TODO: detect child process crash and remove from process list
+                processes.Add(pid, client);
+
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Client process could not start");
+
+                return false;
+            }
         }
 
         public void GlobalStatus(string pid)

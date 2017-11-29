@@ -4,15 +4,12 @@ namespace OGP.Server
 {
     internal class ArgsOptions
     {
-        [Option]
-        public bool? Pcs { get; set; }
+        [Option('d')]
+        public bool Pcs { get; set; }
 
         [Option('p', Required = true)]
         public string Pid { get; set; }
-
-        [Option('u', Required = true)]
-        public string PcsUrl { get; set; }
-
+        
         [Option('s', Required = true)]
         public string ServerUrl { get; set; }
 

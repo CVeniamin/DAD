@@ -32,19 +32,20 @@ namespace OGP.PuppetMaster
         {
             PcsManager pcs = PcsPool.GetByUrl(pcsUrl);
 
-            string serverURLs = "";
-            if (ServerList.Servers.Count > 0)
+            string serverURLs = String.Join(",", ServerList.Servers);
+            
+            bool result = pcs.StartClient(pid, clientUrl, msecPerRound, numPlayers, filename, serverURLs);
+            
+            if (result == true)
             {
-                foreach (string serverUrl in ServerList.Servers)
-                {
-                    serverURLs += serverUrl + ",";
-                }
+                PcsPool.LinkPid(pid, pcsUrl);
+
+                return String.Empty;
             }
-
-            pcs.StartClient(pid, clientUrl, msecPerRound, numPlayers, filename, serverURLs);
-            PcsPool.LinkPid(pid, pcsUrl);
-
-            return String.Empty;
+            else
+            {
+                return "Error - process not started";
+            }
         }
     }
 
@@ -69,12 +70,19 @@ namespace OGP.PuppetMaster
         {
             PcsManager pcs = PcsPool.GetByUrl(pcsUrl);
 
-            pcs.StartServer(pid, serverUrl, msecPerRound, numPlayers);
+            bool result = pcs.StartServer(pid, serverUrl, msecPerRound, numPlayers);
 
-            ServerList.AddServer(serverUrl);
-            PcsPool.LinkPid(pid, pcsUrl);
+            if (result == true)
+            {
+                ServerList.AddServer(serverUrl);
+                PcsPool.LinkPid(pid, pcsUrl);
 
-            return String.Empty;
+                return String.Empty;
+            }
+            else
+            {
+                return "Error - process not started";
+            }
         }
     }
 
