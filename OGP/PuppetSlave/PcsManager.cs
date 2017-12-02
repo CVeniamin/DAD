@@ -14,10 +14,7 @@ namespace OGP.PCS
         {
             processes = new Dictionary<string, Process>();
         }
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern bool SetWindowText(IntPtr hwnd, String lpString);
-
+        
         private bool WaitForProcess(Process proc)
         {
             int delaySeconds = 0;
