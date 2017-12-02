@@ -8,7 +8,7 @@ namespace OGP.Server
 {
     class Player
     {
-        public string PlayerId { get; internal set; } // TODO: remove
+        public string PlayerId { get; internal set; }
         public int X { get; internal set; }
         public int Y { get; internal set; }
         public int Score { get; internal set; }

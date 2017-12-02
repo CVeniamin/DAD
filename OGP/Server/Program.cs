@@ -13,24 +13,7 @@ namespace OGP.Server
     {
         //private GameService gameService;
         private static ChatManager chatManager;
-
-        private static void RegisterServices()
-        {
-            RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(GameService),
-                "GameService",
-                WellKnownObjectMode.Singleton);
-
-            //ChatService chatService = new ChatService();
-            //RemotingServices.Marshal(chatService, "ChatService");
-
-            chatManager = new ChatManager();
-            RemotingServices.Marshal(chatManager, "ChatManager");
-
-            //RemotingConfiguration.RegisterWellKnownServiceType(
-            //    typeof(ChatServerServices), "ChatServer",
-            //    WellKnownObjectMode.Singleton);
-        }
+        
 
         private static void Main(string[] args)
         {
@@ -44,23 +27,18 @@ namespace OGP.Server
                 }
 
                 Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
-                // change usingSingleton to false to use Marshal activation
-                Uri uri = new Uri(argsOptions.ServerUrl);
 
-                try
+                InManager connectionManager = new InManager(argsOptions.ServerUrl, null, null, null);
+                
+                if (connectionManager.GotError())
                 {
-                    TcpChannel channel = new TcpChannel(uri.Port);
-                    ChannelServices.RegisterChannel(channel, true);
-                }
-                catch (SocketException)
-                {
-                    Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
+                    Console.WriteLine("Error initializing. Exiting.");
                     return;
                 }
 
-                RegisterServices();
-                Console.WriteLine("Server Registered at " + argsOptions.ServerUrl);
-                Console.WriteLine("Server Port at " + uri.Port);
+                chatManager = new ChatManager();
+                RemotingServices.Marshal(chatManager, "ChatManager");
+
                 Console.WriteLine("Waiting for players to join...");
 
                 Thread t = new Thread(() => WaitForPlayers(argsOptions));

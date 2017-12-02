@@ -97,6 +97,16 @@ namespace OGP.Server
             servers = new List<Server>();
         }
 
+        public List<Player> GetPlayers()
+        {
+            return players;
+        }
+
+        public void SetPlayers(List<Player> players)
+        {
+            this.players = players;
+        }
+
         internal GameStateView GetGameState()
         {
             if (cachedGameStateView == null && GenerateGameStateView())
