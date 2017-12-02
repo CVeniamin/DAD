@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OGP.Server
 {
-    class ActionHandler
+    internal class ActionHandler
     {
         internal void Process(object args)
         {
@@ -14,7 +10,7 @@ namespace OGP.Server
         }
     }
 
-    class ChatHandler
+    internal class ChatHandler
     {
         internal void Process(object args)
         {
@@ -22,7 +18,7 @@ namespace OGP.Server
         }
     }
 
-    class StateHandler
+    internal class StateHandler
     {
         internal void Process(object args)
         {

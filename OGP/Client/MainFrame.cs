@@ -462,7 +462,7 @@ namespace OGP.Client
             public List<IChatClient> Clients { get => clients; set => clients = value; }
             public string Pid { get => pid; set => pid = value; }
 
-            public ChatClient(MainFrame mf, string p )
+            public ChatClient(MainFrame mf, string p)
             {
                 Clients = new List<IChatClient>();
                 messages = new List<string>();
@@ -496,7 +496,6 @@ namespace OGP.Client
                     }
                     catch (Exception e)
                     {
-
                         MsgToClient(e.ToString());
                         clients.RemoveAt(i);
                     }

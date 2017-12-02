@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace OGP.Server
 {
-    class RemotingEndpoint : MarshalByRefObject
+    internal class RemotingEndpoint : MarshalByRefObject
     {
         private InManager connectionManager;
 
@@ -26,7 +23,7 @@ namespace OGP.Server
         }
     }
 
-    class InManager
+    internal class InManager
     {
         private bool initError = false;
         private bool frozen = false;
@@ -63,7 +60,8 @@ namespace OGP.Server
 
             this.commandQueue = new CommandQueue();
 
-            backgroundThread = new Thread(() => {
+            backgroundThread = new Thread(() =>
+            {
                 while (true)
                 {
                     if (!frozen)
@@ -124,20 +122,21 @@ namespace OGP.Server
         }
     }
 
-    enum Type { Action, Chat, State };
+    internal enum Type
+    { Action, Chat, State };
 
     [Serializable]
-    class Command
+    internal class Command
     {
         public Type Type { get; set; }
         public object Args { get; set; }
         internal long InsertedTime { get; set; }
     }
 
-    class OutManager
+    internal class OutManager
     {
         private Dictionary<string, CommandQueue> outQueues;
-        
+
         private Thread backgroundThread;
         private HashSet<CommandQueue> activeQueues;
 
@@ -146,7 +145,8 @@ namespace OGP.Server
             this.outQueues = new Dictionary<string, CommandQueue>();
             this.activeQueues = new HashSet<CommandQueue>();
 
-            backgroundThread = new Thread(() => {
+            backgroundThread = new Thread(() =>
+            {
                 while (true)
                 {
                     foreach (CommandQueue commandQueue in activeQueues)
@@ -183,7 +183,7 @@ namespace OGP.Server
             if (outQueues.TryGetValue(dstUrl, out CommandQueue commandQueue))
             {
                 commandQueue.SetDelay(time);
-            } 
+            }
         }
     }
 
