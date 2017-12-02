@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using System.Collections.Generic;
 
 namespace OGP.Server
 {
@@ -10,7 +11,7 @@ namespace OGP.Server
         [Option('p', Required = true)]
         public string Pid { get; set; }
 
-        [Option('s', Required = true)]
+        [Option('u', Required = true)]
         public string ServerUrl { get; set; }
 
         [Option('m', DefaultValue = 20)]
@@ -18,5 +19,8 @@ namespace OGP.Server
 
         [Option('n', DefaultValue = 5)]
         public int NumPlayers { get; set; }
+
+        [OptionList('s', Required = true)]
+        public IList<string> ServerEndpoints { get; set; }
     }
 }

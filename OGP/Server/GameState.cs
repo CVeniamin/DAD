@@ -16,8 +16,14 @@ namespace OGP.Server
         {
             return gameState.GetGameState();
         }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 
+    [Serializable]
     class GameStateView
     {
         private List<GamePlayer> players;

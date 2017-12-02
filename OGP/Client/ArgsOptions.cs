@@ -11,7 +11,7 @@ namespace OGP.Client
         [Option('p', Required = true)]
         public string Pid { get; set; }
 
-        [Option('c', Required = true)]
+        [Option('u', Required = true)]
         public string ClientUrl { get; set; }
 
         [Option('m', DefaultValue = 200, Required = true)]
