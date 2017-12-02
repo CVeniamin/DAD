@@ -74,7 +74,9 @@
     <Compile Include="CommandParser.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="GameNotFoundException.cs" />
+    <Compile Include="GameObjects.cs" />
     <Compile Include="GameService.cs" />
+    <Compile Include="GameState.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
