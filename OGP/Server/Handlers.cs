@@ -4,25 +4,40 @@ namespace OGP.Server
 {
     internal class ActionHandler
     {
+        public ActionHandler()
+        {
+            // TODO: set up timer
+        }
+
         internal void Process(object args)
         {
-            throw new NotImplementedException();
+            // Up/down/left/right
         }
     }
 
     internal class ChatHandler
     {
+        public ChatHandler()
+        {
+            
+        }
+
         internal void Process(object args)
         {
-            throw new NotImplementedException();
+            // Chat message received
         }
     }
 
     internal class StateHandler
     {
+        public StateHandler()
+        {
+            
+        }
+
         internal void Process(object args)
         {
-            throw new NotImplementedException();
+            // Received state from other server (master?) check and apply
         }
     }
 }
