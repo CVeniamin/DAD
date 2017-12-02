@@ -78,9 +78,9 @@
     <Compile Include="GameService.cs" />
     <Compile Include="GameState.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerObjects.cs" />
     <Compile Include="SuppressedWriter.cs" />
   </ItemGroup>
   <ItemGroup>

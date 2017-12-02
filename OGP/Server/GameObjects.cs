@@ -29,13 +29,20 @@ namespace OGP.Server
 
     class GamePlayer : Mappable
     {
+        private string playerId;
         private int score;
         private bool alive;
 
-        public GamePlayer(int x, int y, int score, bool alive) : base(x, y)
+        public GamePlayer(int x, int y, string playerId, int score, bool alive) : base(x, y)
         {
+            this.playerId = playerId;
             this.score = score;
             this.alive = alive;
+        }
+
+        public string GetPlayerId()
+        {
+            return playerId;
         }
 
         public int GetScore()
@@ -65,11 +72,11 @@ namespace OGP.Server
         }
     }
 
-    class GameServer : Mappable
+    class GameServer
     {
         private string Url;
 
-        public GameServer(int x, int y, string Url) : base(x, y)
+        public GameServer(string Url)
         {
             this.Url = Url;
         }
