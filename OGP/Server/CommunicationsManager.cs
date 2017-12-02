@@ -29,6 +29,14 @@ namespace OGP.Server
     class InManager
     {
         private bool initError = false;
+        private bool frozen = false;
+
+        private ActionHandler actionHandler;
+        private ChatHandler chatHandler;
+        private StateHandler stateHandler;
+
+        private CommandQueue commandQueue;
+        private Thread backgroundThread;
 
         public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler)
         {
@@ -48,7 +56,31 @@ namespace OGP.Server
 
             RemotingEndpoint endpoint = new RemotingEndpoint(this);
             RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
-            
+
+            this.actionHandler = actionHandler;
+            this.chatHandler = chatHandler;
+            this.stateHandler = stateHandler;
+
+            this.commandQueue = new CommandQueue();
+
+            backgroundThread = new Thread(() => {
+                while (true)
+                {
+                    if (!frozen)
+                    {
+                        Command command = commandQueue.Dequeue();
+                        if (command != null)
+                        {
+                            PassCommandToHandler(command);
+                        } // else - queue empty
+                    }
+
+                    Thread.Sleep(Timeout.Infinite);
+                }
+            });
+
+            backgroundThread.Start();
+
             Console.WriteLine("Server Registered at " + Url);
         }
 
@@ -57,14 +89,38 @@ namespace OGP.Server
             return initError;
         }
 
+        internal void Enqueue(Command command)
+        {
+            commandQueue.Enqueue(command);
+        }
+
+        public void PassCommandToHandler(Command command)
+        {
+            switch (command.Type)
+            {
+                case Type.Action:
+                    actionHandler.Process(command.Args);
+                    break;
+
+                case Type.Chat:
+                    chatHandler.Process(command.Args);
+                    break;
+
+                case Type.State:
+                    stateHandler.Process(command.Args);
+                    break;
+            }
+        }
+
         internal void Freeze()
         {
-            throw new NotImplementedException();
+            frozen = true;
         }
 
         internal void Unfreeze()
         {
-            throw new NotImplementedException();
+            frozen = false;
+            backgroundThread.Interrupt();
         }
     }
 
@@ -80,18 +136,54 @@ namespace OGP.Server
 
     class OutManager
     {
-        private object outQueue; // store all messages before sending
+        private Dictionary<string, CommandQueue> outQueues;
+        
+        private Thread backgroundThread;
+        private HashSet<CommandQueue> activeQueues;
 
         public OutManager()
         {
+            this.outQueues = new Dictionary<string, CommandQueue>();
+            this.activeQueues = new HashSet<CommandQueue>();
 
-            // TODO: launch thread that will send messages
+            backgroundThread = new Thread(() => {
+                while (true)
+                {
+                    foreach (CommandQueue commandQueue in activeQueues)
+                    {
+                        Command command = commandQueue.Dequeue();
+                    }
+                    activeQueues.Clear();
+
+                    Thread.Sleep(Timeout.Infinite);
+                }
+            });
+
+            backgroundThread.Start();
         }
 
         public bool SendCommand(Command command, string Url)
         {
-            // TODO: add command to queue
+            if (!outQueues.TryGetValue(Url, out CommandQueue commandQueue))
+            {
+                commandQueue = new CommandQueue();
+                commandQueue.Enqueue(command);
+                outQueues.Add(Url, commandQueue);
+            }
+
+            commandQueue.Enqueue(command);
+
+            activeQueues.Add(commandQueue);
+
             return true;
+        }
+
+        public void SetDelay(string dstUrl, int time)
+        {
+            if (outQueues.TryGetValue(dstUrl, out CommandQueue commandQueue))
+            {
+                commandQueue.SetDelay(time);
+            } 
         }
     }
 
@@ -119,7 +211,15 @@ namespace OGP.Server
 
         internal Command Dequeue()
         {
-            Command command = queue.Dequeue();
+            Command command = null;
+            try
+            {
+                command = queue.Dequeue();
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
 
             long currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             long pendingDelay = currentTime - command.InsertedTime - delay;
