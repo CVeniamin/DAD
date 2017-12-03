@@ -95,11 +95,11 @@ namespace OGP.Client
 
             //only works without filename provided
 
-            string clientURL = args[5];
+            string clientURL = args[4];
             Uri clientUri = new Uri(clientURL);
             string clientHostName = clientUri.ToString().Replace(clientUri.PathAndQuery, "");
 
-            string serverURL = args[11];
+            string serverURL = args[10];
             string[] serverURLS = serverURL.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             List<string> namesList = new List<string>(serverURLS.Length);
             namesList.AddRange(serverURLS);

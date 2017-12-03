@@ -38,7 +38,7 @@ namespace OGP.PCS
 
         public bool StartServer(string pid, string serverUrl, int msecPerRound, int numPlayers, string serverUrls)
         {
-            String args = "-d -pp " + pid + " -u " + serverUrl + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString() + " -s " + serverUrls;
+            String args = "-d -p " + pid + " -u " + serverUrl + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString() + " -s " + serverUrls;
 
             Console.WriteLine("Starting Server with args: " + args);
 
@@ -69,7 +69,7 @@ namespace OGP.PCS
 
         public bool StartClient(string pid, string clientURL, int msecPerRound, int numPlayers, string filename, string serverUrls)
         {
-            String args = "--pcs -p " + pid + " -u " + clientURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
+            String args = "-d -p " + pid + " -u " + clientURL + " -m " + msecPerRound.ToString() + " -n " + numPlayers.ToString();
 
             if (filename != null && filename != String.Empty)
             {
