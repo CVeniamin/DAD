@@ -87,7 +87,14 @@ namespace OGP.Client
         {
             InitializeComponent();
 
+            //ShowWaitingBox waiting = new ShowWaitingBox("Waiting for players", "Wait until all players have successfully joined!");
+            //waiting.Start();
+            ////do something that takes a while
+
+            //waiting.Stop();
+
             //only works without filename provided
+
             string clientURL = args[5];
             Uri clientUri = new Uri(clientURL);
             string clientHostName = clientUri.ToString().Replace(clientUri.PathAndQuery, "");
@@ -121,7 +128,9 @@ namespace OGP.Client
             chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
 
             chatManager.RegisterClient(clientHostName);
+
             chatClient.Clients = chatManager.getClients();
+            chatClient.ActivateClients();
 
             label2.Visible = false;
         }
@@ -455,21 +464,21 @@ namespace OGP.Client
                 form.Invoke(new DelAddMsg(form.AddMsg), mensagem);
             }
 
-            private List<IChatClient> clients;
+            private List<string> clientsEndpoints;
             private List<string> messages;
             private string pid;
-
+            private List<IChatClient> clients;
             public List<IChatClient> Clients { get => clients; set => clients = value; }
             public string Pid { get => pid; set => pid = value; }
+            public List<string> ClientsEndpoints { get => clientsEndpoints; set => clientsEndpoints = value; }
 
             public ChatClient(MainFrame mf, string p )
             {
-                Clients = new List<IChatClient>();
                 messages = new List<string>();
                 form = mf;
                 pid = p;
             }
-
+            
             public void SendMsg(string mensagem)
             {
                 messages.Add(mensagem);
@@ -485,7 +494,7 @@ namespace OGP.Client
                 {
                     MsgToBcast = messages[messages.Count - 1];
                 }
-                for (int i = 0; i < clients.Count; i++)
+                for (int i = 0; i < clientsEndpoints.Count; i++)
                 {
                     try
                     {
@@ -500,6 +509,14 @@ namespace OGP.Client
                         MsgToClient(e.ToString());
                         clients.RemoveAt(i);
                     }
+                }
+            }
+
+            public void ActivateClients()
+            {
+                foreach (var url in clientsEndpoints)
+                {
+                    clients.Add((IChatClient)Activator.GetObject(typeof(IChatClient), url));
                 }
             }
 
