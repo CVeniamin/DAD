@@ -1,19 +1,14 @@
 ﻿using Sprache;
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 
 namespace OGP.Server
 {
     internal class Program
     {
-        //private GameService gameService;
         private static ChatManager chatManager;
-        
 
         private static void Main(string[] args)
         {
@@ -28,8 +23,12 @@ namespace OGP.Server
 
                 Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
 
-                InManager connectionManager = new InManager(argsOptions.ServerUrl, null, null, null);
+                ActionHandler actionHandler = new ActionHandler();
+                ChatHandler chatHandler = new ChatHandler();
+                StateHandler stateHandler = new StateHandler();
                 
+                InManager connectionManager = new InManager(argsOptions.ServerUrl, actionHandler, chatHandler, stateHandler);
+
                 if (connectionManager.GotError())
                 {
                     Console.WriteLine("Error initializing. Exiting.");
@@ -91,14 +90,6 @@ namespace OGP.Server
             }
 
             // TODO: start game here (in a new thread, so that process does not die)
-        }
-
-        private static void ActivateRemoteObject(Type t, String objName, WellKnownObjectMode wellKnown)
-        {
-            RemotingConfiguration.RegisterWellKnownServiceType(
-                t,
-                objName,
-                wellKnown);
         }
     }
 

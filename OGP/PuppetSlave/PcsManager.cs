@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace OGP.PCS
@@ -14,7 +13,7 @@ namespace OGP.PCS
         {
             processes = new Dictionary<string, Process>();
         }
-        
+
         private bool WaitForProcess(Process proc)
         {
             int delaySeconds = 0;

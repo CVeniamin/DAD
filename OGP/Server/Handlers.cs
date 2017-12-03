@@ -1,20 +1,43 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OGP.Server
 {
-    class ActionHandler
+    internal class ActionHandler
     {
+        public ActionHandler()
+        {
+            // TODO: set up timer
+        }
+
+        internal void Process(object args)
+        {
+            // Up/down/left/right
+        }
     }
 
-    class ChatHandler
+    internal class ChatHandler
     {
+        public ChatHandler()
+        {
+            
+        }
+
+        internal void Process(object args)
+        {
+            // Chat message received
+        }
     }
 
-    class StateHandler
+    internal class StateHandler
     {
+        public StateHandler()
+        {
+            
+        }
+
+        internal void Process(object args)
+        {
+            // Received state from other server (master?) check and apply
+        }
     }
 }

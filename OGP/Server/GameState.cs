@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace OGP.Server
 {
-    class GameStateProxy : MarshalByRefObject
+    internal class GameStateProxy : MarshalByRefObject
     {
         private GameState gameState;
 
@@ -24,7 +24,7 @@ namespace OGP.Server
     }
 
     [Serializable]
-    class GameStateView
+    internal class GameStateView
     {
         private List<GamePlayer> players;
         private List<GameGhost> ghosts;
@@ -80,7 +80,7 @@ namespace OGP.Server
         }
     }
 
-    class GameState
+    internal class GameState
     {
         private GameStateView cachedGameStateView = null;
 

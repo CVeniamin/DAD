@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OGP.Server
+﻿namespace OGP.Server
 {
-    abstract class Mappable
+    internal abstract class Mappable
     {
         private int x;
         private int y;
@@ -17,7 +11,8 @@ namespace OGP.Server
             this.y = y;
         }
 
-        public int GetX() {
+        public int GetX()
+        {
             return this.x;
         }
 
@@ -27,7 +22,7 @@ namespace OGP.Server
         }
     }
 
-    class GamePlayer : Mappable
+    internal class GamePlayer : Mappable
     {
         private string playerId;
         private int score;
@@ -56,23 +51,21 @@ namespace OGP.Server
         }
     }
 
-    class GameGhost: Mappable
+    internal class GameGhost : Mappable
     {
         public GameGhost(int x, int y) : base(x, y)
         {
-
         }
     }
 
-    class GameCoin : Mappable
+    internal class GameCoin : Mappable
     {
         public GameCoin(int x, int y) : base(x, y)
         {
-
         }
     }
 
-    class GameServer
+    internal class GameServer
     {
         private string Url;
 

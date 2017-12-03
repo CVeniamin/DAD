@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OGP.Server
+﻿namespace OGP.Server
 {
-    class Player
+    internal class Player
     {
         public string PlayerId { get; internal set; }
         public int X { get; internal set; }
@@ -15,19 +9,19 @@ namespace OGP.Server
         public bool Alive { get; internal set; }
     }
 
-    class Ghost
+    internal class Ghost
     {
         public int X { get; internal set; }
         public int Y { get; internal set; }
     }
 
-    class Coin
+    internal class Coin
     {
         public int X { get; internal set; }
         public int Y { get; internal set; }
     }
 
-    class Server
+    internal class Server
     {
         public string Url { get; internal set; }
     }
