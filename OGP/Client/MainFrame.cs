@@ -129,8 +129,8 @@ namespace OGP.Client
 
             chatManager.RegisterClient(clientHostName);
 
-            chatClient.Clients = chatManager.getClients();
-            chatClient.ActivateClients();
+            //chatClient.Clients = chatManager.getClients();
+            //chatClient.ActivateClients();
 
             label2.Visible = false;
         }

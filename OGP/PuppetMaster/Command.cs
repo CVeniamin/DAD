@@ -69,10 +69,17 @@ namespace OGP.PuppetMaster
         public string Exec()
         {
             PcsManager pcs = PcsPool.GetByUrl(pcsUrl);
-
-            string serverURLs = String.Join(",", ServerList.Servers);
-
-            bool result = pcs.StartServer(pid, serverUrl, msecPerRound, numPlayers, serverURLs);
+            string serverURLs;
+            bool result;
+            if (ServerList.Servers.Count > 0)
+            {
+                serverURLs = String.Join(",", ServerList.Servers);
+                result = pcs.StartServer(pid, serverUrl, msecPerRound, numPlayers, serverURLs);
+            }
+            else
+            {
+                result = pcs.StartServer(pid, serverUrl, msecPerRound, numPlayers, null);
+            }
 
             if (result == true)
             {

@@ -20,7 +20,7 @@ namespace OGP.Server
         [Option('n', DefaultValue = 5)]
         public int NumPlayers { get; set; }
 
-        [OptionList('s', Required = true)]
+        [OptionList('s', Required = false)]
         public IList<string> ServerEndpoints { get; set; }
     }
 }
