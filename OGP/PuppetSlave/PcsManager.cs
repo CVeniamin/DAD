@@ -49,14 +49,17 @@ namespace OGP.PCS
             }
 
             Console.WriteLine("Starting Server with args: " + args);
+            //use this way of starting Server.exe
+            Process server = Process.Start("Server.exe", args);
 
-            Process server = new Process();
+            // or use this way
+            //Process server = new Process();
 
-            server.StartInfo.FileName = "Server.exe";
-            server.StartInfo.Arguments = args;
-            server.StartInfo.UseShellExecute = false;
-            server.StartInfo.RedirectStandardOutput = true;
-            server.Start();
+            //server.StartInfo.FileName = "Server.exe";
+            //server.StartInfo.Arguments = args;
+            //server.StartInfo.UseShellExecute = false;
+            //server.StartInfo.RedirectStandardOutput = true;
+            //server.Start();
 
             bool launchSuccess = WaitForProcess(server);
 

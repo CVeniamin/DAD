@@ -102,6 +102,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Middleware\Middleware.csproj">
+      <Project>{0EC6AE55-B254-478B-AA71-21DA1288CB00}</Project>
+      <Name>Middleware</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PuppetSlave\PCS.csproj">
       <Project>{f38ed2ff-63a3-4fcf-bed0-67eacb8b6593}</Project>
       <Name>PCS</Name>

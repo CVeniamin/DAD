@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArgsOptions.cs" />
+    <Compile Include="ChatClient.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="CommandParser.cs" />
     <Compile Include="MainFrame.cs">
@@ -85,7 +86,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SuppressedWriter.cs" />
-    <Compile Include="WaitingBox.cs" />
     <EmbeddedResource Include="MainFrame.resx">
       <DependentUpon>MainFrame.cs</DependentUpon>
     </EmbeddedResource>
@@ -130,6 +130,10 @@
     <None Include="Resources\pink_guy.gif" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Middleware\Middleware.csproj">
+      <Project>{0EC6AE55-B254-478B-AA71-21DA1288CB00}</Project>
+      <Name>Middleware</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PuppetSlave\PCS.csproj">
       <Project>{f38ed2ff-63a3-4fcf-bed0-67eacb8b6593}</Project>
       <Name>PCS</Name>

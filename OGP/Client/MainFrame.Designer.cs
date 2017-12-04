@@ -104,8 +104,11 @@ namespace OGP.Client
             this.tbChat.Margin = new System.Windows.Forms.Padding(4);
             this.tbChat.Multiline = true;
             this.tbChat.Name = "tbChat";
+            this.tbChat.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.tbChat.Size = new System.Drawing.Size(132, 282);
             this.tbChat.TabIndex = 144;
+            this.tbChat.TextChanged += new System.EventHandler(this.tbChat_TextChanged);
+            this.tbChat.MouseDown += TbChat_MouseDown;
             // 
             // MainFrame
             // 
@@ -129,6 +132,7 @@ namespace OGP.Client
             this.PerformLayout();
 
         }
-    #endregion
+
+        #endregion
     }
 }

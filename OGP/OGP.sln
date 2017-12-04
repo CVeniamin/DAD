@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{83C731A4-F319-4D0F-B983-72A65145CB48}"
 EndProject
@@ -13,6 +13,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMaster", "PuppetMaster\PuppetMaster.csproj", "{FF615DFD-8202-4BD1-A36D-81E906D00BAA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PCS", "PuppetSlave\PCS.csproj", "{F38ED2FF-63A3-4FCF-BED0-67EACB8B6593}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Middleware", "Middleware\Middleware.csproj", "{0EC6AE55-B254-478B-AA71-21DA1288CB00}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,6 +38,10 @@ Global
 		{F38ED2FF-63A3-4FCF-BED0-67EACB8B6593}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F38ED2FF-63A3-4FCF-BED0-67EACB8B6593}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F38ED2FF-63A3-4FCF-BED0-67EACB8B6593}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EC6AE55-B254-478B-AA71-21DA1288CB00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EC6AE55-B254-478B-AA71-21DA1288CB00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EC6AE55-B254-478B-AA71-21DA1288CB00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EC6AE55-B254-478B-AA71-21DA1288CB00}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

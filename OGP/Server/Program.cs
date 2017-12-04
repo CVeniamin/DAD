@@ -18,7 +18,7 @@ namespace OGP.Server
                 if (argsOptions.Pcs == true)
                 {
                     Console.WriteLine("Suppressing output");
-                    Console.SetOut(new SuppressedWriter());
+                    //Console.SetOut(new SuppressedWriter());
                 }
 
                 Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
@@ -84,41 +84,17 @@ namespace OGP.Server
 
         private static void WaitForPlayers(ArgsOptions argsOptions)
         {
-            while (chatManager.getClients().Count < argsOptions.NumPlayers)
+            while (chatManager.GetClients().Count < argsOptions.NumPlayers)
             {
                 Thread.Sleep(1000);
+                Console.Write(".");
             }
+
+            chatManager.GameStarted = true;
 
             // TODO: start game here (in a new thread, so that process does not die)
         }
+
     }
 
-    internal class ChatManager : MarshalByRefObject, IChatManager
-    {
-        private List<IChatClient> clients;
-
-        public ChatManager()
-        {
-            clients = new List<IChatClient>();
-        }
-
-        public List<IChatClient> getClients()
-        {
-            //TODO: server needs to push the list of clients for each client after all clients are connected
-            return clients;
-        }
-
-        public IChatClient RegisterClient(string url)
-        {
-            Console.WriteLine("New client listening at " + url);
-            IChatClient newClient = (IChatClient)Activator.GetObject(typeof(IChatClient), url);
-            clients.Add(newClient);
-            return newClient;
-        }
-
-        public override object InitializeLifetimeService()
-        {
-            return null;
-        }
-    }
 }

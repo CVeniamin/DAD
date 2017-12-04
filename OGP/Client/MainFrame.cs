@@ -1,4 +1,5 @@
-﻿using OGP.Server;
+﻿using OGP.Middleware;
+using OGP.Server;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -62,6 +63,9 @@ namespace OGP.Client
         //
         // If the calling thread is the same as the thread that created
         // the TextBox control, the Text property is set directly.
+        // usage
+        //this.chatThread = new Thread(() => ThreadProcSafe(clientHostName));
+        //this.chatThread.Start();
 
         private void SetText(string text)
         {
@@ -81,58 +85,56 @@ namespace OGP.Client
 
         private IChatManager chatManager;
 
-        public ChatClient chatClient;
-
-        public MainFrame(string[] args)
+        private ChatClient chatClient;
+        //public MainFrame(ChatClient chat)
+        internal MainFrame(ArgsOptions args)
         {
             InitializeComponent();
 
-            //ShowWaitingBox waiting = new ShowWaitingBox("Waiting for players", "Wait until all players have successfully joined!");
-            //waiting.Start();
-            ////do something that takes a while
+            Uri clientUri = new Uri(args.ClientUrl);
+            string clientHostName = GetHostName(clientUri);
 
-            //waiting.Stop();
-
-            //only works without filename provided
-
-            string clientURL = args[4];
-            Uri clientUri = new Uri(clientURL);
-            string clientHostName = clientUri.ToString().Replace(clientUri.PathAndQuery, "");
-
-            string serverURL = args[10];
-            string[] serverURLS = serverURL.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-            List<string> namesList = new List<string>(serverURLS.Length);
-            namesList.AddRange(serverURLS);
             List<Uri> serversURIs = new List<Uri>();
-            foreach (var n in namesList)
+            foreach (var url in args.ServerEndpoints)
             {
-                serversURIs.Add(new Uri(n));
+                serversURIs.Add(new Uri(url));
             }
 
-            string serverHostName = serversURIs[0].ToString().Replace(serversURIs[0].PathAndQuery, "");
-
-            this.chatThread = new Thread(() => ThreadProcSafe(clientHostName));
-            this.chatThread.Start();
+            string serverHostName = GetHostName(serversURIs[0]);
 
             TcpChannel channel = new TcpChannel(clientUri.Port);
             ChannelServices.RegisterChannel(channel, true);
 
-            string pid = args[1];
-            chatClient = new ChatClient(this, pid);
-
-            this.chatThread = new Thread(() => ThreadProcSafe(chatClient.Pid));
-            this.chatThread.Start();
-
+            chatClient = new ChatClient(this, args.Pid, clientHostName);
             RemotingServices.Marshal(chatClient, "ChatClient");
 
             chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
-
             chatManager.RegisterClient(clientHostName);
 
-            //chatClient.Clients = chatManager.getClients();
-            //chatClient.ActivateClients();
+            Thread t = new Thread(() => WaitForClientsToStart(chatClient, chatManager));
+            t.Start();
 
             label2.Visible = false;
+        }
+
+        public static string GetHostName(Uri uri)
+        {
+            return uri.ToString().Replace(uri.PathAndQuery, "");
+        }
+
+        public void WaitForClientsToStart(IChatClient chat, IChatManager manager)
+        {
+            while (!manager.GameStarted)
+            {
+                Thread.Sleep(1000);
+            }
+
+            if (chat != null && manager != null)
+            {
+                //each client receives a list containing all other clients
+                chat.ClientsEndpoints = manager.GetClients();
+                chat.ActivateClients();
+            }
         }
 
         private void keyisdown(object sender, KeyEventArgs e)
@@ -147,13 +149,6 @@ namespace OGP.Client
             {
                 //TODO: send to server moveRight
                 goright = true;
-                int i = 1;
-                foreach (var v in chatClient.Clients)
-                {
-                    tbChat.Text += i.ToString();
-                    i++;
-                }
-
                 pacman.Image = Properties.Resources.Right;
             }
             if (e.KeyCode == Keys.Up)
@@ -292,7 +287,9 @@ namespace OGP.Client
             if (e.KeyCode == Keys.Enter)
             {
                 chatClient.SendMsg(tbMsg.Text);
-                tbChat.Text += "\r\n" + tbMsg.Text; tbMsg.Clear(); tbMsg.Enabled = false; this.Focus();
+                tbMsg.Clear();
+                tbMsg.Enabled = false;
+                this.Focus();
             }
         }
 
@@ -379,16 +376,6 @@ namespace OGP.Client
             ((System.ComponentModel.ISupportInitialize)(wall)).BeginInit();
         }
 
-        private static Game GetGameObject(String url, int port, String objName)
-        {
-            TcpChannel chan = new TcpChannel();
-            ChannelServices.RegisterChannel(chan, true);
-            String endpoint = url + port.ToString() + "/" + objName;
-            Game game = (Game)Activator.GetObject(
-              typeof(Game), endpoint);
-            return game;
-        }
-
         private void MainFrame_Load(object sender, EventArgs e)
         {
             //Game game = GetGameObject("tcp://localhost:", 8086, "GameObject");
@@ -452,77 +439,16 @@ namespace OGP.Client
             tbChat.Text += "\r\n" + s;
         }
 
-        private delegate void DelAddMsg(string mensagem);
-
-        public class ChatClient : MarshalByRefObject, IChatClient
+        private void TbChat_MouseDown(object sender, MouseEventArgs e)
         {
-            public static MainFrame form;
+            if (!tbChat.Focused)
+                tbChat.Focus();
+        }
 
-            public void MsgToClient(string mensagem)
-            {
-                // thread-safe access to form
-                form.Invoke(new DelAddMsg(form.AddMsg), mensagem);
-            }
-
-            private List<string> clientsEndpoints;
-            private List<string> messages;
-            private string pid;
-            private List<IChatClient> clients;
-            public List<IChatClient> Clients { get => clients; set => clients = value; }
-            public string Pid { get => pid; set => pid = value; }
-            public List<string> ClientsEndpoints { get => clientsEndpoints; set => clientsEndpoints = value; }
-
-            public ChatClient(MainFrame mf, string p)
-            {
-                messages = new List<string>();
-                form = mf;
-                pid = p;
-            }
-            
-            public void SendMsg(string mensagem)
-            {
-                messages.Add(mensagem);
-                ThreadStart ts = new ThreadStart(this.BroadcastMessage);
-                Thread t = new Thread(ts);
-                t.Start();
-            }
-
-            private void BroadcastMessage()
-            {
-                string MsgToBcast;
-                lock (this)
-                {
-                    MsgToBcast = messages[messages.Count - 1];
-                }
-                for (int i = 0; i < clientsEndpoints.Count; i++)
-                {
-                    try
-                    {
-                        //ChatClient cc = (ChatClient) clients[i];
-                        //MsgToClient(cc.pid);
-                        //cc.MsgToClient(MsgToBcast);
-                        ((IChatClient)clients[i]).MsgToClient(MsgToBcast);
-                    }
-                    catch (Exception e)
-                    {
-                        MsgToClient(e.ToString());
-                        clients.RemoveAt(i);
-                    }
-                }
-            }
-
-            public void ActivateClients()
-            {
-                foreach (var url in clientsEndpoints)
-                {
-                    clients.Add((IChatClient)Activator.GetObject(typeof(IChatClient), url));
-                }
-            }
-
-            public override object InitializeLifetimeService()
-            {
-                return null;
-            }
+        private void tbChat_TextChanged(object sender, EventArgs e)
+        {
+            this.tbChat.SelectionStart = this.tbChat.Text.Length;
+            this.tbChat.ScrollToCaret();
         }
     }
 }

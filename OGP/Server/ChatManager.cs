@@ -1,18 +1,38 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using OGP.Middleware;
 
 namespace OGP.Server
 {
-    public interface IChatManager
+    internal class ChatManager : MarshalByRefObject, IChatManager
     {
-        IChatClient RegisterClient(string url);
 
-        List<IChatClient> getClients();
-    }
+        private List<string> clientsEndpoints;
+        public List<string> ClientsEndpoints { get => clientsEndpoints; set => clientsEndpoints = value; }
 
-    public interface IChatClient
-    {
-        void SendMsg(string message);
+        private bool gameStarted;
+        public bool GameStarted { get => gameStarted; set => gameStarted = value; }
 
-        void MsgToClient(string message);
+        public ChatManager()
+        {
+            gameStarted = false;
+            clientsEndpoints = new List<string>();
+        }
+
+        public List<string> GetClients()
+        {
+            return ClientsEndpoints;
+        }
+
+        public void RegisterClient(string url)
+        {
+            Console.WriteLine("New client listening at " + url);
+            ClientsEndpoints.Add(url);
+        }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 }
