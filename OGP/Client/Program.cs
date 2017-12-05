@@ -31,34 +31,6 @@ namespace OGP.Client
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new MainFrame(argsOptions));
 
-                //Uri clientUri = new Uri(argsOptions.ClientUrl);
-                //string clientHostName = GetHostName(clientUri);
-
-                //List<Uri> serversURIs = new List<Uri>();
-                //foreach (var n in argsOptions.ServerEndpoints)
-                //{
-                //    serversURIs.Add(new Uri(n));
-                //}
-
-                //string serverHostName = GetHostName(serversURIs[0]);
-
-                //TcpChannel channel = new TcpChannel(clientUri.Port);
-                //ChannelServices.RegisterChannel(channel, true);
-
-                //IChatManager chatManager = (IChatManager) Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
-
-                //MainFrame mf = new MainFrame();
-                //ChatClient chatClient = new ChatClient(mf, argsOptions.Pid, clientHostName);
-
-                //RemotingServices.Marshal(chatClient, "ChatClient");
-
-                //chatManager.RegisterClient(clientHostName);
-
-                //Thread t = new Thread(() => WaitForClientsToStart(chatClient, chatManager));
-                //t.Start();
-
-                //Application.Run(mf);
-
                 // Start listening for input
                 while (true)
                 {
@@ -77,21 +49,6 @@ namespace OGP.Client
             else
             {
                 Console.WriteLine("Missing required arguments");
-            }
-        }
-
-        public static void WaitForClientsToStart(IChatClient chat, IChatManager manager)
-        {
-            while (!manager.GameStarted)
-            {
-                Thread.Sleep(1000);
-            }
-
-            if (chat != null && manager != null)
-            {
-                //each client receives a list containing all other clients
-                chat.ClientsEndpoints = manager.GetClients();
-                chat.ActivateClients();
             }
         }
 

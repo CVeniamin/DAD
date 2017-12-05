@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
 
 namespace OGP.Server
 {
-    internal class GameStateProxy : MarshalByRefObject
+    public class GameStateProxy : MarshalByRefObject
     {
         private GameState gameState;
 
@@ -24,12 +25,17 @@ namespace OGP.Server
     }
 
     [Serializable]
-    internal class GameStateView
+    public class GameStateView
     {
         private List<GamePlayer> players;
         private List<GameGhost> ghosts;
         private List<GameCoin> coins;
         private List<GameServer> servers;
+
+        public List<GamePlayer> Players { get => players; set => players = value; }
+        public List<GameGhost> Ghosts { get => ghosts; set => ghosts = value; }
+        public List<GameCoin> Coins { get => coins; set => coins = value; }
+        public List<GameServer> Servers { get => servers; set => servers = value; }
 
         public GameStateView()
         {
@@ -58,29 +64,9 @@ namespace OGP.Server
         {
             servers.Add(gameServer);
         }
-
-        public List<GamePlayer> GetPlayers()
-        {
-            return players;
-        }
-
-        public List<GameGhost> GetGhosts()
-        {
-            return ghosts;
-        }
-
-        public List<GameCoin> GetGamePlayers()
-        {
-            return coins;
-        }
-
-        public List<GameServer> GetServers()
-        {
-            return servers;
-        }
     }
 
-    internal class GameState
+    public class GameState
     {
         private GameStateView cachedGameStateView = null;
 
@@ -97,15 +83,10 @@ namespace OGP.Server
             servers = new List<Server>();
         }
 
-        public List<Player> GetPlayers()
-        {
-            return players;
-        }
-
-        public void SetPlayers(List<Player> players)
-        {
-            this.players = players;
-        }
+        public List<Player> Players { get => players; set => players = value; }
+        public List<Ghost> Ghosts { get => ghosts; set => ghosts = value; }
+        public List<Coin> Coins { get => coins; set => coins = value; }
+        public List<Server> Servers { get => servers; set => servers = value; }
 
         internal GameStateView GetGameState()
         {
@@ -123,12 +104,12 @@ namespace OGP.Server
 
             foreach (Player player in players)
             {
-                gameStateView.AddPlayer(new GamePlayer(player.X, player.Y, player.PlayerId, player.Score, player.Alive));
+               gameStateView.AddPlayer(new GamePlayer(player.X, player.Y, player.PlayerId, player.Score, player.Alive));
             }
 
             foreach (Ghost ghost in ghosts)
             {
-                gameStateView.AddGhost(new GameGhost(ghost.X, ghost.Y));
+                gameStateView.AddGhost(new GameGhost(ghost.X, ghost.Y, ghost.Type));
             }
 
             foreach (Coin coin in coins)

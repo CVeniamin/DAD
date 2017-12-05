@@ -22,10 +22,9 @@ namespace OGP.Client
             base.Dispose(disposing);
         }
 
-        private PictureBox pacman;
         private Label label1;
         private Label label2;
-        private Timer timer1;
+        //private Timer timer1;
 
         private TextBox tbMsg;
         private TextBox tbChat;
@@ -41,11 +40,11 @@ namespace OGP.Client
             this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.pacman = new System.Windows.Forms.PictureBox();
+            //this.timer1 = new System.Windows.Forms.Timer(this.components);
+            //this.pacman = new System.Windows.Forms.PictureBox();
             this.tbMsg = new System.Windows.Forms.TextBox();
             this.tbChat = new System.Windows.Forms.TextBox();
-            ((System.ComponentModel.ISupportInitialize)(this.pacman)).BeginInit();
+            //((System.ComponentModel.ISupportInitialize)(this.pacman)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -72,20 +71,20 @@ namespace OGP.Client
             // 
             // timer1
             // 
-            this.timer1.Enabled = true;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            //this.timer1.Enabled = true;
+            //this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // pacman
             // 
-            this.pacman.BackColor = System.Drawing.Color.Transparent;
-            this.pacman.Image = global::OGP.Client.Properties.Resources.Left;
-            this.pacman.Location = new System.Drawing.Point(11, 49);
-            this.pacman.Margin = new System.Windows.Forms.Padding(0);
-            this.pacman.Name = "pacman";
-            this.pacman.Size = new System.Drawing.Size(33, 31);
-            this.pacman.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pacman.TabIndex = 4;
-            this.pacman.TabStop = false;
+            //this.pacman.BackColor = System.Drawing.Color.Transparent;
+            //this.pacman.Image = global::OGP.Client.Properties.Resources.Left;
+            //this.pacman.Location = new System.Drawing.Point(11, 49);
+            //this.pacman.Margin = new System.Windows.Forms.Padding(0);
+            //this.pacman.Name = "pacman";
+            //this.pacman.Size = new System.Drawing.Size(33, 31);
+            //this.pacman.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            //this.pacman.TabIndex = 4;
+            //this.pacman.TabStop = false;
             // 
             // tbMsg
             // 
@@ -120,14 +119,14 @@ namespace OGP.Client
             this.Controls.Add(this.tbMsg);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.pacman);
+            //this.Controls.Add(this.pacman);
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "MainFrame";
             this.Text = "DADman";
             this.Load += new System.EventHandler(this.MainFrame_Load);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.keyisdown);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.keyisup);
-            ((System.ComponentModel.ISupportInitialize)(this.pacman)).EndInit();
+            //((System.ComponentModel.ISupportInitialize)(this.pacman)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 

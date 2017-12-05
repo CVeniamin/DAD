@@ -9,6 +9,8 @@ namespace OGP.Server
     internal class Program
     {
         private static ChatManager chatManager;
+        private static GameStateProxy gameProxy;
+        private static GameState gameState;
 
         private static void Main(string[] args)
         {
@@ -40,8 +42,11 @@ namespace OGP.Server
 
                 Console.WriteLine("Waiting for players to join...");
 
-                Thread t = new Thread(() => WaitForPlayers(argsOptions));
-                t.Start();
+                Thread waitChatClients = new Thread(() => WaitForPlayers(argsOptions));
+                waitChatClients.Start();
+
+                Thread waitGameClients = new Thread(() => StartGame(argsOptions));
+                waitGameClients.Start();
 
                 //// Load requested games
                 //List<string> supportedGames = new List<string>();
@@ -95,6 +100,14 @@ namespace OGP.Server
             // TODO: start game here (in a new thread, so that process does not die)
         }
 
-    }
+        private static void StartGame(ArgsOptions argsOptions)
+        {
+            gameState = new GameState();
+            Game game = new Game(argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
+            gameState.Ghosts = game.CreateGhosts();
 
+            gameProxy = new GameStateProxy(gameState);
+            RemotingServices.Marshal(gameProxy, "GameStateProxy");
+        }
+    }
 }

@@ -2,8 +2,10 @@
 using OGP.Server;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
@@ -22,6 +24,11 @@ namespace OGP.Client
         private bool goleft;
         private bool goright;
 
+        private bool goupNew;
+        private bool godownNew;
+        private bool goleftNew;
+        private bool gorightNew;
+
         private int boardRight = 320;
         private int boardBottom = 320;
         private int boardLeft = 0;
@@ -29,64 +36,27 @@ namespace OGP.Client
 
         //player speed
         private int speed = 5;
-
         private int score = 0; private int total_coins = 61;
 
         //ghost speed for the one direction ghosts
         private int ghost1 = 5;
-
         private int ghost2 = 5;
 
         //x and y directions for the bi-direccional pink ghost
         private int ghost3x = 5;
-
         private int ghost3y = 5;
-
-        // This delegate enables asynchronous calls for setting
-        // the text property on a TextBox control.
-        private delegate void SetTextDelegate(string text);
-
-        private Thread chatThread = null;
-
-        private void ThreadProcSafe(string text)
-        {
-            this.SetText(text);
-        }
-
-        // This method demonstrates a pattern for making thread-safe
-        // calls on a Windows Forms control.
-        //
-        // If the calling thread is different from the thread that
-        // created the TextBox control, this method creates a
-        // StringArgReturningVoidDelegate and calls itself asynchronously using the
-        // Invoke method.
-        //
-        // If the calling thread is the same as the thread that created
-        // the TextBox control, the Text property is set directly.
-        // usage
-        //this.chatThread = new Thread(() => ThreadProcSafe(clientHostName));
-        //this.chatThread.Start();
-
-        private void SetText(string text)
-        {
-            // InvokeRequired required compares the thread ID of the
-            // calling thread to the thread ID of the creating thread.
-            // If these threads are different, it returns true.
-            if (this.tbChat.InvokeRequired)
-            {
-                SetTextDelegate d = new SetTextDelegate(SetText);
-                this.Invoke(d, new object[] { text });
-            }
-            else
-            {
-                this.tbChat.Text += text;
-            }
-        }
+        private List<string> moves;
+        
+        private PictureBox player;
+        private PictureBox pacman;
+        private PictureBox redGhost;
+        private PictureBox yellowGhost;
+        private PictureBox pinkGhost;
 
         private IChatManager chatManager;
-
         private ChatClient chatClient;
-        //public MainFrame(ChatClient chat)
+        private GameStateProxy gameState;
+
         internal MainFrame(ArgsOptions args)
         {
             InitializeComponent();
@@ -99,12 +69,10 @@ namespace OGP.Client
             {
                 serversURIs.Add(new Uri(url));
             }
-
             string serverHostName = GetHostName(serversURIs[0]);
 
             TcpChannel channel = new TcpChannel(clientUri.Port);
             ChannelServices.RegisterChannel(channel, true);
-
             chatClient = new ChatClient(this, args.Pid, clientHostName);
             RemotingServices.Marshal(chatClient, "ChatClient");
 
@@ -114,7 +82,163 @@ namespace OGP.Client
             Thread t = new Thread(() => WaitForClientsToStart(chatClient, chatManager));
             t.Start();
 
+            moves = GetMoves(args.TraceFile);
+            gameState = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
+            GameStateView gameView = gameState.GetGameState();
+
+            DiplayGhosts(gameView);
+
+            this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 49);
+            this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
+
+            Thread move = new Thread(() => Play(this.player, args.TickDuration, args.TraceFile, moves));
+            move.Start();
+
             label2.Visible = false;
+        }
+
+        private void DiplayGhosts(GameStateView gameView)
+        {
+            this.pinkGhost = new PictureBox();
+            this.yellowGhost = new PictureBox();
+            this.redGhost = new PictureBox();
+
+            foreach (GameGhost g in gameView.Ghosts)
+            {
+                switch (g.Type)
+                {
+                    case GhostType.Pink:
+                        this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, g.X, g.Y);
+                        break;
+                    case GhostType.Yellow:
+                        this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, g.X, g.Y);
+                        break;
+                    case GhostType.Red:
+                        this.redGhost = DrawElement( "redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, g.X, g.Y);
+                        break;
+                }
+            }
+        }
+
+        private void Play(PictureBox image, int tick, string filename, List<string> moves)
+        {
+            int roundId = 0;
+            int finalRound = moves.Count - 1;
+            while (roundId != finalRound)
+            {
+                label1.Text = "Score: " + score;
+
+                MovePacMan(image, moves[roundId]);
+
+                if (goleftNew)
+                {
+                    if (image.Left > (boardLeft))
+                        image.Left -= speed;
+                }
+                if (gorightNew)
+                {
+                    if (image.Left < (boardRight))
+                        image.Left += speed;
+                }
+                if (goupNew)
+                {
+                    if (image.Top > (boardTop))
+                        pacman.Top -= speed;
+                }
+                if (godownNew)
+                {
+                    if (image.Top < (boardBottom))
+                        image.Top += speed;
+                }
+                //move ghosts
+                redGhost.Left += ghost1;
+                yellowGhost.Left += ghost2;
+
+                // if the red ghost hits the wall 1 then wereverse the speed
+                if (redGhost.Bounds.IntersectsWith(wallsArray[0].Bounds))
+                    ghost1 = -ghost1;
+                // if the red ghost hits the wall 2 we reverse the speed
+                else if (redGhost.Bounds.IntersectsWith(wallsArray[1].Bounds))
+                    ghost1 = -ghost1;
+                // if the yellow ghost hits the wall 3 then we reverse the speed
+                if (yellowGhost.Bounds.IntersectsWith(wallsArray[2].Bounds))
+                    ghost2 = -ghost2;
+                // if the yellow chost hits the wall 4 then wereverse the speed
+                else if (yellowGhost.Bounds.IntersectsWith(wallsArray[3].Bounds))
+                    ghost2 = -ghost2;
+                //moving ghosts and bumping with the walls end
+                //for loop to check walls, ghosts and points
+                foreach (Control x in this.Controls)
+                {
+                    // checking if the player hits the wall or the ghost, then game is over
+                    if (x is PictureBox && (string)x.Tag == "wall" || (string)x.Tag == "ghost")
+                    {
+                        if (((PictureBox)x).Bounds.IntersectsWith(image.Bounds))
+                        {
+                            //image.Left = 0;
+                            //image.Top = 25;
+                            label2.Text = "GAME OVER";
+                            label2.Visible = true;
+                            //timer1.Stop();
+                        }
+                    }
+                    if (x is PictureBox && (string)x.Tag == "coin")
+                    {
+                        if (((PictureBox)x).Bounds.IntersectsWith(image.Bounds))
+                        {
+                            this.Controls.Remove(x);
+                            score++;
+                            //TODO check if all coins where "eaten"
+                            if (score == total_coins)
+                            {
+                                //pacman.Left = 0;
+                                //pacman.Top = 25;
+                                label2.Text = "GAME WON!";
+                                label2.Visible = true;
+                                //timer1.Stop();
+                            }
+                        }
+                    }
+                }
+                pinkGhost.Left += ghost3x;
+                pinkGhost.Top += ghost3y;
+
+                if (pinkGhost.Left < boardLeft ||
+                    pinkGhost.Left > boardRight ||
+                    (pinkGhost.Bounds.IntersectsWith(wallsArray[0].Bounds)) ||
+                    (pinkGhost.Bounds.IntersectsWith(wallsArray[1].Bounds)) ||
+                    (pinkGhost.Bounds.IntersectsWith(wallsArray[2].Bounds)) ||
+                    (pinkGhost.Bounds.IntersectsWith(wallsArray[3].Bounds)))
+                {
+                    ghost3x = -ghost3x;
+                }
+                if (pinkGhost.Top < boardTop || pinkGhost.Top + pinkGhost.Height > boardBottom - 2)
+                {
+                    ghost3y = -ghost3y;
+                }
+                Thread.Sleep(tick);
+                roundId += 1;
+            }
+        }
+
+        private List<string> GetMoves(string filename)
+        {
+            List<string> moves = new List<string>();
+
+            if (filename != null && filename != String.Empty)
+            {
+                using (var reader = new StreamReader(filename))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var line = reader.ReadLine();
+                        var values = line.Split(',');
+                        moves.Add(values[1]);
+                    }
+                }
+            }
+
+            return moves;
         }
 
         public static string GetHostName(Uri uri)
@@ -134,6 +258,29 @@ namespace OGP.Client
                 //each client receives a list containing all other clients
                 chat.ClientsEndpoints = manager.GetClients();
                 chat.ActivateClients();
+            }
+        }
+
+        private void MovePacMan(PictureBox player, string move)
+        {
+            switch (move)
+            {
+                case "UP":
+                    goupNew = true;
+                    player.Image = Properties.Resources.Up;
+                    break;
+                case "DOWN":
+                    godownNew = true;
+                    player.Image = Properties.Resources.down;
+                    break;
+                case "LEFT":
+                    goleftNew = true;
+                    player.Image = Properties.Resources.Left;
+                    break;
+                case "RIGHT":
+                    gorightNew = true;
+                    player.Image = Properties.Resources.Right;
+                    break;
             }
         }
 
@@ -192,7 +339,6 @@ namespace OGP.Client
         private void timer1_Tick(object sender, EventArgs e)
         {
             label1.Text = "Score: " + score;
-
             //move player
             if (goleft)
             {
@@ -243,7 +389,7 @@ namespace OGP.Client
                         pacman.Top = 25;
                         label2.Text = "GAME OVER";
                         label2.Visible = true;
-                        timer1.Stop();
+                        //timer1.Stop();
                     }
                 }
                 if (x is PictureBox && (string)x.Tag == "coin")
@@ -259,7 +405,7 @@ namespace OGP.Client
                             //pacman.Top = 25;
                             label2.Text = "GAME WON!";
                             label2.Visible = true;
-                            timer1.Stop();
+                            //timer1.Stop();
                         }
                     }
                 }
@@ -297,10 +443,6 @@ namespace OGP.Client
         {
         }
 
-        private PictureBox redGhost;
-        private PictureBox yellowGhost;
-        private PictureBox pinkGhost;
-
         private PictureBox[] coinsArray = Enumerable.Repeat(0, 41).Select(c => new PictureBox()).ToArray();
         private PictureBox[] wallsArray = Enumerable.Repeat(0, 4).Select(w => new PictureBox()).ToArray();
 
@@ -334,7 +476,7 @@ namespace OGP.Client
                 columnsX++;
                 tabIndex++;
 
-                ((System.ComponentModel.ISupportInitialize)(coinsArray[i])).BeginInit();
+                ((ISupportInitialize)(coinsArray[i])).BeginInit();
             }
         }
 
@@ -342,20 +484,29 @@ namespace OGP.Client
         /// Method used to draw a ghost give a Object, name, resource and x,y
         /// </summary>
         ///
-        private void DrawGhost(PictureBox ghost, string ghostname, Bitmap ghostResource, int x, int y)
+        private PictureBox DrawElement(string ghostname, string tag,  Bitmap resource, int x, int y)
         {
-            ghost.BackColor = Color.Transparent;
-            ghost.Image = ghostResource;
-            ghost.Location = new Point(x, y);
-            ghost.Margin = new Padding(4);
-            ghost.Name = ghostname;
-            ghost.Size = new Size(40, 37);
-            ghost.SizeMode = PictureBoxSizeMode.Zoom;
-            ghost.TabIndex = 3;
-            ghost.TabStop = false;
-            ghost.Tag = "ghost";
 
-            ((System.ComponentModel.ISupportInitialize)(ghost)).BeginInit();
+            PictureBox element = new PictureBox();
+            element.BackColor = Color.Transparent;
+            element.Image = resource;
+            element.Location = new Point(x, y);
+            element.Margin = new Padding(4);
+            element.Name = ghostname;
+            element.Size = new Size(35, 35);
+            element.SizeMode = PictureBoxSizeMode.Zoom;
+            element.TabIndex = 3;
+            element.TabStop = false;
+            element.Tag = tag;
+            InitializeDrawing(element);
+            return element;
+        }
+
+        public void InitializeDrawing(PictureBox element)
+        {
+            ((ISupportInitialize)(element)).BeginInit();
+            this.Controls.Add(element);
+            ((ISupportInitialize)(element)).EndInit();
         }
 
         /// <summary>
@@ -373,17 +524,11 @@ namespace OGP.Client
             wall.TabStop = false;
             wall.Tag = "wall";
 
-            ((System.ComponentModel.ISupportInitialize)(wall)).BeginInit();
+            ((ISupportInitialize)(wall)).BeginInit();
         }
 
         private void MainFrame_Load(object sender, EventArgs e)
         {
-            //Game game = GetGameObject("tcp://localhost:", 8086, "GameObject");
-            //string hello = game.SayHello();
-            //tbChat.Text += hello;
-            this.pinkGhost = new PictureBox();
-            this.yellowGhost = new PictureBox();
-            this.redGhost = new PictureBox();
 
             int[] wall1 = new int[] { 110, 50 };
             int[] wall2 = new int[] { 280, 50 };
@@ -396,14 +541,6 @@ namespace OGP.Client
             {
                 DrawWall(wallsArray[i], "wall" + i.ToString(), walls[i]);
             }
-
-            DrawGhost(this.pinkGhost, "pinkGhost", global::OGP.Client.Properties.Resources.pink_guy, 200, 50);
-            DrawGhost(this.yellowGhost, "yellowGhost", global::OGP.Client.Properties.Resources.yellow_guy, 200, 235);
-            DrawGhost(this.redGhost, "redGhost", global::OGP.Client.Properties.Resources.red_guy, 240, 90);
-
-            this.Controls.Add(this.pinkGhost);
-            this.Controls.Add(this.yellowGhost);
-            this.Controls.Add(this.redGhost);
 
             DrawCoins();
 
@@ -418,15 +555,11 @@ namespace OGP.Client
             addControlFor(wallsArray);
             addControlFor(coinsArray);
 
-            ((System.ComponentModel.ISupportInitialize)(this.pinkGhost)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.yellowGhost)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.redGhost)).EndInit();
-
             void EndInitFor(PictureBox[] array)
             {
                 for (int i = 0; i < array.Length; i++)
                 {
-                    ((System.ComponentModel.ISupportInitialize)(array[i])).EndInit();
+                    ((ISupportInitialize)(array[i])).EndInit();
                 }
             }
 
