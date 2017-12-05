@@ -84,9 +84,6 @@ namespace OGP.Client
 
             moves = GetMoves(args.TraceFile);
             gameState = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
-            GameStateView gameView = gameState.GetGameState();
-
-            DiplayGhosts(gameView);
 
             this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 49);
             this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
@@ -95,29 +92,6 @@ namespace OGP.Client
             move.Start();
 
             label2.Visible = false;
-        }
-
-        private void DiplayGhosts(GameStateView gameView)
-        {
-            this.pinkGhost = new PictureBox();
-            this.yellowGhost = new PictureBox();
-            this.redGhost = new PictureBox();
-
-            foreach (GameGhost g in gameView.Ghosts)
-            {
-                switch (g.Type)
-                {
-                    case GhostType.Pink:
-                        this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, g.X, g.Y);
-                        break;
-                    case GhostType.Yellow:
-                        this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, g.X, g.Y);
-                        break;
-                    case GhostType.Red:
-                        this.redGhost = DrawElement( "redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, g.X, g.Y);
-                        break;
-                }
-            }
         }
 
         private void Play(PictureBox image, int tick, string filename, List<string> moves)
@@ -443,61 +417,85 @@ namespace OGP.Client
         {
         }
 
-        private PictureBox[] coinsArray = Enumerable.Repeat(0, 41).Select(c => new PictureBox()).ToArray();
+        private PictureBox[] coinsArray;
         private PictureBox[] wallsArray = Enumerable.Repeat(0, 4).Select(w => new PictureBox()).ToArray();
 
-        private void DrawCoins()
+        private void DisplayGhosts(GameStateView gameView)
         {
-            short coinPosX = 15;
-            short coinPosY = 45;
-            short tabIndex = 73;
-            short columnsX = 1;
-            for (int i = 0; i < coinsArray.Length; i++)
+            this.pinkGhost = new PictureBox();
+            this.yellowGhost = new PictureBox();
+            this.redGhost = new PictureBox();
+
+            foreach (GameGhost g in gameView.Ghosts)
             {
-                //completed one row, reset x and y positions to new row
-                if (columnsX == 7)
+                switch (g.Type)
                 {
-                    coinPosX = 15;
-                    coinPosY += 45;
-                    columnsX = 1;
+                    case GhostType.Pink:
+                        this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, g.X, g.Y);
+                        break;
+                    case GhostType.Yellow:
+                        this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, g.X, g.Y);
+                        break;
+                    case GhostType.Red:
+                        this.redGhost = DrawElement("redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, g.X, g.Y);
+                        break;
                 }
-
-                coinsArray[i].Image = global::OGP.Client.Properties.Resources.cccc;
-                coinsArray[i].Location = new Point(coinPosX, coinPosY);
-                coinsArray[i].Margin = new Padding(4);
-                coinsArray[i].Name = "pictureBox" + i.ToString();
-                coinsArray[i].Size = new Size(15, 15);
-                coinsArray[i].SizeMode = PictureBoxSizeMode.StretchImage;
-                coinsArray[i].TabIndex = tabIndex;
-                coinsArray[i].TabStop = false;
-                coinsArray[i].Tag = "coin";
-
-                coinPosX += 60;
-                columnsX++;
-                tabIndex++;
-
-                ((ISupportInitialize)(coinsArray[i])).BeginInit();
             }
         }
 
+        private void DisplayCoins(GameStateView gameView)
+        {
+            int totalCoins = gameView.Coins.Count;
+            this.coinsArray = Enumerable.Repeat(0, totalCoins).Select(c => new PictureBox()).ToArray();
+
+            int tabIndex = 73;
+            int i = 0;
+            foreach (GameCoin c in gameView.Coins)
+            {
+                coinsArray[i] = DrawCoin(tabIndex, c.X, c.Y);
+                i++;
+                tabIndex++;
+            }
+        }
+
+        private PictureBox DrawCoin(int tabIndex, int x, int y)
+        {
+            PictureBox coin = new PictureBox
+            {
+                Image = global::OGP.Client.Properties.Resources.cccc,
+                Location = new Point(x, y),
+                Margin = new Padding(4),
+                Name = "coin",
+                Size = new Size(15, 15),
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                TabIndex = tabIndex,
+                TabStop = false,
+                Tag = "coin"
+            };
+            InitializeDrawing(coin);
+            return coin;
+        }
+
         /// <summary>
-        /// Method used to draw a ghost give a Object, name, resource and x,y
+        /// Method used to draw a ghost give a name, resource and x,y
         /// </summary>
         ///
         private PictureBox DrawElement(string ghostname, string tag,  Bitmap resource, int x, int y)
         {
 
-            PictureBox element = new PictureBox();
-            element.BackColor = Color.Transparent;
-            element.Image = resource;
-            element.Location = new Point(x, y);
-            element.Margin = new Padding(4);
-            element.Name = ghostname;
-            element.Size = new Size(35, 35);
-            element.SizeMode = PictureBoxSizeMode.Zoom;
-            element.TabIndex = 3;
-            element.TabStop = false;
-            element.Tag = tag;
+            PictureBox element = new PictureBox
+            {
+                BackColor = Color.Transparent,
+                Image = resource,
+                Location = new Point(x, y),
+                Margin = new Padding(4),
+                Name = ghostname,
+                Size = new Size(35, 35),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                TabIndex = 3,
+                TabStop = false,
+                Tag = tag
+            };
             InitializeDrawing(element);
             return element;
         }
@@ -509,62 +507,45 @@ namespace OGP.Client
             ((ISupportInitialize)(element)).EndInit();
         }
 
-        /// <summary>
-        /// Method used to draw a wall give a Object, name, pos(x,y) and size(w,h)
-        /// </summary>
-        private void DrawWall(PictureBox wall, string name, int[] pos)
+        private void DisplayWalls(GameStateView gameView)
         {
-            wall.BackColor = Color.MidnightBlue;
-            wall.Location = new Point(pos[0], pos[1]);
-            wall.Margin = new Padding(4);
-            wall.Name = name;
-            wall.Size = new Size(15, 80);
-            wall.SizeMode = PictureBoxSizeMode.Zoom;
-            wall.TabIndex = 3;
-            wall.TabStop = false;
-            wall.Tag = "wall";
+            int numberOfWalls = gameView.Walls.Count;
+            this.wallsArray = Enumerable.Repeat(0, numberOfWalls).Select(c => new PictureBox()).ToArray();
+            int i = 0;
+            foreach (GameWall wall in gameView.Walls)
+            {
+                wallsArray[i] = DrawWall(wall.X, wall.Y, wall.SizeX, wall.SizeY);
+                i++;
+            }
+        }
+        /// <summary>
+        /// Method used to draw a wall give a PictureBox, name, x
+        /// </summary>
+        private PictureBox DrawWall(int x, int y, int sizeX, int sizeY)
+        {
+            PictureBox wall = new PictureBox
+            {
+                BackColor = Color.MidnightBlue,
+                Location = new Point(x, y),
+                Margin = new Padding(4),
+                Name = "wall",
+                Size = new Size(sizeX, sizeY),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                TabIndex = 3,
+                TabStop = false,
+                Tag = "wall"
+            };
 
-            ((ISupportInitialize)(wall)).BeginInit();
+            InitializeDrawing(wall);
+            return wall;
         }
 
         private void MainFrame_Load(object sender, EventArgs e)
         {
-
-            int[] wall1 = new int[] { 110, 50 };
-            int[] wall2 = new int[] { 280, 50 };
-            int[] wall3 = new int[] { 110, 245 };
-            int[] wall4 = new int[] { 300, 245 };
-
-            int[][] walls = { wall1, wall2, wall3, wall4 };
-
-            for (int i = 0; i < wallsArray.Length; i++)
-            {
-                DrawWall(wallsArray[i], "wall" + i.ToString(), walls[i]);
-            }
-
-            DrawCoins();
-
-            void addControlFor(PictureBox[] array)
-            {
-                for (int i = 0; i < array.Length; i++)
-                {
-                    this.Controls.Add(array[i]);
-                }
-            }
-
-            addControlFor(wallsArray);
-            addControlFor(coinsArray);
-
-            void EndInitFor(PictureBox[] array)
-            {
-                for (int i = 0; i < array.Length; i++)
-                {
-                    ((ISupportInitialize)(array[i])).EndInit();
-                }
-            }
-
-            EndInitFor(wallsArray);
-            EndInitFor(coinsArray);
+            GameStateView gameView = gameState.GetGameState();
+            DisplayWalls(gameView);
+            DisplayGhosts(gameView);
+            DisplayCoins(gameView);
         }
 
         public void AddMsg(string s)

@@ -28,7 +28,7 @@ namespace OGP.Server
         private int score;
         private bool alive;
 
-        public GamePlayer(int x, int y, string playerId, int score, bool alive):base(x,y)
+        public GamePlayer(int x, int y, string playerId, int score, bool alive) : base(x, y)
         {
             this.playerId = playerId;
             this.score = score;
@@ -72,6 +72,22 @@ namespace OGP.Server
     {
         public GameCoin(int x, int y) : base(x, y)
         {
+        }
+    }
+
+    [Serializable]
+    public class GameWall : Mappable
+    {
+        private int sizeY;
+        private int sizeX;
+
+        public int SizeX { get => sizeX; set => sizeX = value; }
+        public int SizeY { get => sizeY; set => sizeY = value; }
+
+        public GameWall(int x, int y, int sizeX, int sizeY) : base(x, y)
+        {
+            this.sizeX = sizeX;
+            this.sizeY = sizeY;
         }
     }
 

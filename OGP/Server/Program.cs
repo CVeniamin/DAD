@@ -104,6 +104,10 @@ namespace OGP.Server
         {
             gameState = new GameState();
             Game game = new Game(argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
+            //gameState.Players = game.CreatePlayers();
+
+            gameState.Walls = game.CreateWalls();
+            gameState.Coins = game.CreateCoins(41);
             gameState.Ghosts = game.CreateGhosts();
 
             gameProxy = new GameStateProxy(gameState);

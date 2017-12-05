@@ -30,11 +30,13 @@ namespace OGP.Server
         private List<GamePlayer> players;
         private List<GameGhost> ghosts;
         private List<GameCoin> coins;
+        private List<GameWall> walls;
         private List<GameServer> servers;
 
         public List<GamePlayer> Players { get => players; set => players = value; }
         public List<GameGhost> Ghosts { get => ghosts; set => ghosts = value; }
         public List<GameCoin> Coins { get => coins; set => coins = value; }
+        public List<GameWall> Walls { get => walls; set => walls = value; }
         public List<GameServer> Servers { get => servers; set => servers = value; }
 
         public GameStateView()
@@ -42,6 +44,7 @@ namespace OGP.Server
             players = new List<GamePlayer>();
             ghosts = new List<GameGhost>();
             coins = new List<GameCoin>();
+            walls = new List<GameWall>();
             servers = new List<GameServer>();
         }
 
@@ -60,6 +63,11 @@ namespace OGP.Server
             coins.Add(gameCoin);
         }
 
+        internal void AddWall(GameWall gameWall)
+        {
+            walls.Add(gameWall);
+        }
+
         internal void AddServer(GameServer gameServer)
         {
             servers.Add(gameServer);
@@ -73,6 +81,7 @@ namespace OGP.Server
         private List<Player> players;
         private List<Ghost> ghosts;
         private List<Coin> coins;
+        private List<Wall> walls;
         private List<Server> servers;
 
         public GameState()
@@ -80,12 +89,14 @@ namespace OGP.Server
             players = new List<Player>();
             ghosts = new List<Ghost>();
             coins = new List<Coin>();
+            walls = new List<Wall>();
             servers = new List<Server>();
         }
 
         public List<Player> Players { get => players; set => players = value; }
         public List<Ghost> Ghosts { get => ghosts; set => ghosts = value; }
         public List<Coin> Coins { get => coins; set => coins = value; }
+        public List<Wall> Walls { get => walls; set => walls = value; }
         public List<Server> Servers { get => servers; set => servers = value; }
 
         internal GameStateView GetGameState()
@@ -115,6 +126,11 @@ namespace OGP.Server
             foreach (Coin coin in coins)
             {
                 gameStateView.AddCoin(new GameCoin(coin.X, coin.Y));
+            }
+
+            foreach (Wall wall in walls)
+            {
+                gameStateView.AddWall(new GameWall(wall.X, wall.Y, wall.SizeX, wall.SizeY));
             }
 
             foreach (Server server in servers)
