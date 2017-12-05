@@ -40,44 +40,13 @@ namespace OGP.Server
                 chatManager = new ChatManager();
                 RemotingServices.Marshal(chatManager, "ChatManager");
 
-                GameState gameState = new GameState();
-                List<Ghost> ghosts = new List<Ghost>();
-
-                Ghost pink = new Ghost
-                {
-                    X = 200,
-                    Y = 50,
-                    Type = GhostType.Pink
-                };
-
-                Ghost yellow = new Ghost
-                {
-                    X = 200,
-                    Y = 235,
-                    Type = GhostType.Yellow
-                };
-
-                Ghost red = new Ghost
-                {
-                    X = 240,
-                    Y = 90,
-                    Type = GhostType.Red
-                };
-
-                ghosts.Add(pink);
-                ghosts.Add(yellow);
-                ghosts.Add(red);
-
-                gameState.Ghosts = ghosts;
-
-                GameStateProxy gsp = new GameStateProxy(gameState);
-                RemotingServices.Marshal(gsp, "GameStateProxy");
-
-
                 Console.WriteLine("Waiting for players to join...");
 
-                Thread t = new Thread(() => WaitForPlayers(argsOptions));
-                t.Start();
+                Thread waitChatClients = new Thread(() => WaitForPlayers(argsOptions));
+                waitChatClients.Start();
+
+                Thread waitGameClients = new Thread(() => StartGame(argsOptions));
+                waitGameClients.Start();
 
                 //// Load requested games
                 //List<string> supportedGames = new List<string>();
@@ -128,22 +97,17 @@ namespace OGP.Server
 
             chatManager.GameStarted = true;
 
-            //int i = 1;
-
-            //RemotingServices.Marshal(gameProxy, "GameProxy");
-            //List<GamePlayer> gpList = new List<GamePlayer>();
-            //foreach (var client in chatManager.GetClients())
-            //{
-            //    gpList.Add(new Player(8, i * 40, i.ToString(), 0, true));
-            //    i++;
-            //}
-
-            //gameState.SetPlayers(gpList);
-
-
             // TODO: start game here (in a new thread, so that process does not die)
         }
 
-    }
+        private static void StartGame(ArgsOptions argsOptions)
+        {
+            gameState = new GameState();
+            Game game = new Game(argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
+            gameState.Ghosts = game.CreateGhosts();
 
+            gameProxy = new GameStateProxy(gameState);
+            RemotingServices.Marshal(gameProxy, "GameStateProxy");
+        }
+    }
 }

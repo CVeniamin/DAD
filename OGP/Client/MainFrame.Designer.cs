@@ -24,7 +24,7 @@ namespace OGP.Client
 
         private Label label1;
         private Label label2;
-        private Timer timer1;
+        //private Timer timer1;
 
         private TextBox tbMsg;
         private TextBox tbChat;
@@ -40,7 +40,7 @@ namespace OGP.Client
             this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
+            //this.timer1 = new System.Windows.Forms.Timer(this.components);
             //this.pacman = new System.Windows.Forms.PictureBox();
             this.tbMsg = new System.Windows.Forms.TextBox();
             this.tbChat = new System.Windows.Forms.TextBox();
@@ -71,8 +71,8 @@ namespace OGP.Client
             // 
             // timer1
             // 
-            this.timer1.Enabled = true;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            //this.timer1.Enabled = true;
+            //this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // pacman
             // 

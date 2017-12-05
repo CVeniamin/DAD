@@ -36,71 +36,27 @@ namespace OGP.Client
 
         //player speed
         private int speed = 5;
-
         private int score = 0; private int total_coins = 61;
 
         //ghost speed for the one direction ghosts
         private int ghost1 = 5;
-
         private int ghost2 = 5;
 
         //x and y directions for the bi-direccional pink ghost
         private int ghost3x = 5;
-
         private int ghost3y = 5;
-
-        // This delegate enables asynchronous calls for setting
-        // the text property on a TextBox control.
-        private delegate void SetTextDelegate(string text);
-
-        private Thread chatThread = null;
-
-        private void ThreadProcSafe(string text)
-        {
-            this.SetText(text);
-        }
-
-        // This method demonstrates a pattern for making thread-safe
-        // calls on a Windows Forms control.
-        //
-        // If the calling thread is different from the thread that
-        // created the TextBox control, this method creates a
-        // StringArgReturningVoidDelegate and calls itself asynchronously using the
-        // Invoke method.
-        //
-        // If the calling thread is the same as the thread that created
-        // the TextBox control, the Text property is set directly.
-        // usage
-        //this.chatThread = new Thread(() => ThreadProcSafe(clientHostName));
-        //this.chatThread.Start();
-
-        private void SetText(string text)
-        {
-            // InvokeRequired required compares the thread ID of the
-            // calling thread to the thread ID of the creating thread.
-            // If these threads are different, it returns true.
-            if (this.tbChat.InvokeRequired)
-            {
-                SetTextDelegate d = new SetTextDelegate(SetText);
-                this.Invoke(d, new object[] { text });
-            }
-            else
-            {
-                this.tbChat.Text += text;
-            }
-        }
-
-        private IChatManager chatManager;
-
-        private ChatClient chatClient;
+        private List<string> moves;
+        
         private PictureBox player;
         private PictureBox pacman;
-        private PictureBox player2;
+        private PictureBox redGhost;
+        private PictureBox yellowGhost;
+        private PictureBox pinkGhost;
 
+        private IChatManager chatManager;
+        private ChatClient chatClient;
         private GameStateProxy gameState;
-        private List<string> moves;
 
-        //public MainFrame(ChatClient chat)
         internal MainFrame(ArgsOptions args)
         {
             InitializeComponent();
@@ -113,12 +69,10 @@ namespace OGP.Client
             {
                 serversURIs.Add(new Uri(url));
             }
-
             string serverHostName = GetHostName(serversURIs[0]);
 
             TcpChannel channel = new TcpChannel(clientUri.Port);
             ChannelServices.RegisterChannel(channel, true);
-
             chatClient = new ChatClient(this, args.Pid, clientHostName);
             RemotingServices.Marshal(chatClient, "ChatClient");
 
@@ -129,9 +83,22 @@ namespace OGP.Client
             t.Start();
 
             moves = GetMoves(args.TraceFile);
-
             gameState = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
             GameStateView gameView = gameState.GetGameState();
+
+            DiplayGhosts(gameView);
+
+            this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 49);
+            this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
+
+            Thread move = new Thread(() => Play(this.player, args.TickDuration, args.TraceFile, moves));
+            move.Start();
+
+            label2.Visible = false;
+        }
+
+        private void DiplayGhosts(GameStateView gameView)
+        {
             this.pinkGhost = new PictureBox();
             this.yellowGhost = new PictureBox();
             this.redGhost = new PictureBox();
@@ -150,38 +117,10 @@ namespace OGP.Client
                         this.redGhost = DrawElement( "redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, g.X, g.Y);
                         break;
                 }
-                
             }
-
-            //gamePlayer = new GamePlayer(11, 49, args.Pid, this.score, true);
-
-            //DrawElement(player, "pacman", "pacman", global::OGP.Client.Properties.Resources.Left, gamePlayer.Location.X, gamePlayer.Location.Y);
-            //RemotingServices.Marshal(gamePlayer, "GamePlayer");
-
-            //gamePlayer = (GamePlayer)Activator.GetObject(typeof(GamePlayer), serverHostName + "/GamePlayer");
-
-
-            //GamePlayer gp1 = new GamePlayer(11, 49, args.Pid, this.score, true);
-            //gp1.DrawPlayer("pacman", global::OGP.Client.Properties.Resources.Left);
-
-            this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 49);
-            this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
-
-            //this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, 200, 50);
-            //this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, 200, 235);
-            //this.redGhost = DrawElement("redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, 240, 90);
-
-            //GamePlayer gp2 = new GamePlayer(11, 90, args.Pid, this.score, true);
-            //gp2.DrawPlayer("pacman", global::OGP.Client.Properties.Resources.Left);
-            //this.player2 = gp2.GetPlayerImage();
-
-            Thread move = new Thread(() => Play(this.player, args.TickDuration, args.TraceFile, moves));
-            move.Start();
-
-            label2.Visible = false;
         }
 
-        public void Play(PictureBox image, int tick, string filename, List<string> moves)
+        private void Play(PictureBox image, int tick, string filename, List<string> moves)
         {
             int roundId = 0;
             int finalRound = moves.Count - 1;
@@ -450,7 +389,7 @@ namespace OGP.Client
                         pacman.Top = 25;
                         label2.Text = "GAME OVER";
                         label2.Visible = true;
-                        timer1.Stop();
+                        //timer1.Stop();
                     }
                 }
                 if (x is PictureBox && (string)x.Tag == "coin")
@@ -466,7 +405,7 @@ namespace OGP.Client
                             //pacman.Top = 25;
                             label2.Text = "GAME WON!";
                             label2.Visible = true;
-                            timer1.Stop();
+                            //timer1.Stop();
                         }
                     }
                 }
@@ -504,27 +443,9 @@ namespace OGP.Client
         {
         }
 
-        private PictureBox redGhost;
-        private PictureBox yellowGhost;
-        private PictureBox pinkGhost;
-
         private PictureBox[] coinsArray = Enumerable.Repeat(0, 41).Select(c => new PictureBox()).ToArray();
         private PictureBox[] wallsArray = Enumerable.Repeat(0, 4).Select(w => new PictureBox()).ToArray();
 
-        private void DrawPacman(PictureBox pacman, string pacmanName, Bitmap pacmanImage, int x, int y)
-        {
-            this.pacman.BackColor = Color.Transparent;
-            this.pacman.Image = pacmanImage;
-            this.pacman.Location = new Point(x, y);
-            this.pacman.Margin = new Padding(0);
-            this.pacman.Name = pacmanName;
-            this.pacman.Size = new Size(33, 31);
-            this.pacman.SizeMode = PictureBoxSizeMode.StretchImage;
-            this.pacman.TabIndex = 4;
-            this.pacman.TabStop = false;
-
-            ((ISupportInitialize)(pacman)).BeginInit();
-        }
         private void DrawCoins()
         {
             short coinPosX = 15;
@@ -608,10 +529,6 @@ namespace OGP.Client
 
         private void MainFrame_Load(object sender, EventArgs e)
         {
-
-            //this.pinkGhost = new PictureBox();
-            //this.yellowGhost = new PictureBox();
-            //this.redGhost = new PictureBox();
 
             int[] wall1 = new int[] { 110, 50 };
             int[] wall2 = new int[] { 280, 50 };
