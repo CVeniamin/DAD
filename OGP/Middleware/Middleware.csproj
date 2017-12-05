@@ -39,7 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IChatClient.cs" />
-    <Compile Include="iChatManager.cs" />
+    <Compile Include="IChatManager.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

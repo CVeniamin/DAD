@@ -7,14 +7,14 @@ namespace OGP.Client
 {
     internal class ChatClient : MarshalByRefObject, IChatClient
     {
-        private delegate void AddMessageDelegate(string mensagem);
+        private delegate void AddMessageDelegate(string message);
 
         public static MainFrame form;
 
-        public void MsgToClient(string mensagem)
+        public void MsgToClient(string message)
         {
             // thread-safe access to form
-            form.Invoke(new AddMessageDelegate(form.AddMsg), mensagem);
+            form.Invoke(new AddMessageDelegate(form.AddMsg), message);
         }
         private const string SERVICE_NAME = "/ChatClient";
 

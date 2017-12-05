@@ -1,6 +1,12 @@
-﻿namespace OGP.Server
+﻿using System;
+using System.ComponentModel;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace OGP.Server
 {
-    internal abstract class Mappable
+    [Serializable]
+    public abstract class Mappable
     {
         private int x;
         private int y;
@@ -11,24 +17,18 @@
             this.y = y;
         }
 
-        public int GetX()
-        {
-            return this.x;
-        }
-
-        public int GetY()
-        {
-            return this.y;
-        }
+        public int X { get => x; set => x = value; }
+        public int Y { get => y; set => y = value; }
     }
 
-    internal class GamePlayer : Mappable
+    [Serializable]
+    public class GamePlayer : Mappable
     {
         private string playerId;
         private int score;
         private bool alive;
 
-        public GamePlayer(int x, int y, string playerId, int score, bool alive) : base(x, y)
+        public GamePlayer(int x, int y, string playerId, int score, bool alive):base(x,y)
         {
             this.playerId = playerId;
             this.score = score;
@@ -51,21 +51,32 @@
         }
     }
 
-    internal class GameGhost : Mappable
+    public enum GhostType
+    { Pink, Red, Yellow };
+
+    [Serializable]
+    public class GameGhost : Mappable
     {
-        public GameGhost(int x, int y) : base(x, y)
+        private GhostType type;
+
+        public GameGhost(int x, int y, GhostType t) : base(x, y)
         {
+            this.type = t;
         }
+
+        public GhostType Type { get => type; set => type = value; }
     }
 
-    internal class GameCoin : Mappable
+    [Serializable]
+    public class GameCoin : Mappable
     {
         public GameCoin(int x, int y) : base(x, y)
         {
         }
     }
 
-    internal class GameServer
+    [Serializable]
+    public class GameServer
     {
         private string Url;
 

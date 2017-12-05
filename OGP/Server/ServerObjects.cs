@@ -1,6 +1,6 @@
 ﻿namespace OGP.Server
 {
-    internal class Player
+    public class Player
     {
         public string PlayerId { get; internal set; }
         public int X { get; internal set; }
@@ -9,19 +9,20 @@
         public bool Alive { get; internal set; }
     }
 
-    internal class Ghost
+    public class Ghost
+    {
+        public GhostType Type { get; internal set; }
+        public int X { get; internal set; }
+        public int Y { get; internal set; }
+    }
+
+    public class Coin
     {
         public int X { get; internal set; }
         public int Y { get; internal set; }
     }
 
-    internal class Coin
-    {
-        public int X { get; internal set; }
-        public int Y { get; internal set; }
-    }
-
-    internal class Server
+    public class Server
     {
         public string Url { get; internal set; }
     }
