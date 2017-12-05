@@ -21,7 +21,7 @@ namespace OGP.PuppetMaster
 
             if (channel == null)
             {
-                TcpChannel channel = new TcpChannel();
+                channel = new TcpChannel();
                 ChannelServices.RegisterChannel(channel, true);
             }
 
