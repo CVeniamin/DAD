@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
+using static OGP.Server.ActionHandler;
 
 namespace OGP.Server
 {
@@ -27,6 +28,12 @@ namespace OGP.Server
         private string playerId;
         private int score;
         private bool alive;
+        private Move move;
+
+        public string PlayerId { get => playerId; set => playerId = value; }
+        public int Score { get => score; set => score = value; }
+        public bool Alive { get => alive; set => alive = value; }
+        public Move Move { get => move; set => move = value; }
 
         public GamePlayer(int x, int y, string playerId, int score, bool alive) : base(x, y)
         {
@@ -35,20 +42,6 @@ namespace OGP.Server
             this.alive = alive;
         }
 
-        public string GetPlayerId()
-        {
-            return playerId;
-        }
-
-        public int GetScore()
-        {
-            return score;
-        }
-
-        public bool IsAlive()
-        {
-            return alive;
-        }
     }
 
     public enum GhostType

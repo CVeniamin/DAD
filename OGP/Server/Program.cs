@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Remoting;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 
 namespace OGP.Server
@@ -12,6 +14,11 @@ namespace OGP.Server
         private static GameStateProxy gameProxy;
         private static GameState gameState;
         private static Game game;
+
+        private static OutManager outManager;
+        private static StateHandler stateHandler;
+        private static InManager connectionManager;
+        private static ActionHandler actionHandler;
 
         private static void Main(string[] args)
         {
@@ -25,51 +32,19 @@ namespace OGP.Server
                 }
 
                 Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
-                
+
+                Uri uri = new Uri(argsOptions.ServerUrl);
+
+                TcpChannel channel = new TcpChannel(uri.Port);
+                ChannelServices.RegisterChannel(channel, true);
+
                 gameState = new GameState();
-
-                ActionHandler actionHandler = new ActionHandler(gameState);
-
-                List<string> otherServersList;
-                if (argsOptions.ServerEndpoints != null)
-                {
-                    otherServersList = (List<string>)argsOptions.ServerEndpoints;
-                } else
-                {
-                    otherServersList = new List<string>();
-                }
-
-                OutManager outManager = new OutManager(argsOptions.ServerUrl, otherServersList);
-                InManager connectionManager = new InManager(argsOptions.ServerUrl, actionHandler, null, null, true);
-
-                actionHandler.SetOutManager(outManager);
-
-                if (connectionManager.GotError())
-                {
-                    Console.WriteLine("Error initializing. Exiting.");
-                    return;
-                }
-
-                new Thread(() =>
-                {
-                    while (true)
-                    {
-                        actionHandler.NotifyOfState();
-
-                        Thread.Sleep(argsOptions.TickDuration);
-                    }
-                }).Start();
 
                 chatManager = new ChatManager();
                 RemotingServices.Marshal(chatManager, "ChatManager");
 
-                Console.WriteLine("Waiting for players to join...");
-
-                Thread waitChatClients = new Thread(() => WaitForPlayers(argsOptions));
-                waitChatClients.Start();
-
-                Thread waitGameClients = new Thread(() => StartGame(argsOptions));
-                waitGameClients.Start();
+                Thread waitClients = new Thread(() => { StartGame(argsOptions); WaitForPlayers(argsOptions); });
+                waitClients.Start();
 
                 //// Load requested games
                 //List<string> supportedGames = new List<string>();
@@ -112,31 +87,79 @@ namespace OGP.Server
 
         private static void WaitForPlayers(ArgsOptions argsOptions)
         {
-            while (chatManager.GetClients().Count < argsOptions.NumPlayers)
+            Console.WriteLine("Waiting for players to join...");
+
+            while (chatManager.ClientsEndpoints.Count < argsOptions.NumPlayers)
             {
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
                 Console.Write(".");
             }
-            Console.WriteLine("Game STarted");
-            chatManager.GameStarted = true;
-            game.GameStarted = true;
 
             // TODO: start game here (in a new thread, so that process does not die)
         }
 
         private static void StartGame(ArgsOptions argsOptions)
         {
+
+            //while (chatManager.GameStarted)
+            //{
+            //    Thread.Sleep(500);
+            //    Console.Write(".");
+            //}
+
+            Console.WriteLine("\n Game started!");
+
             game = new Game(gameState, argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
-            //gameState.Players = game.CreatePlayers();
-
-            game.Init(41);
-
-            //gameState.Walls = game.CreateWalls();
-            //gameState.Coins = game.CreateCoins(41);
-            //gameState.Ghosts = game.CreateGhosts();
+            game.Init(chatManager.ClientsEndpoints, 41);
 
             gameProxy = new GameStateProxy(gameState);
             RemotingServices.Marshal(gameProxy, "GameStateProxy");
+
+            //chatManager.GameStarted = true;
+            
+            Thread notifyState = new Thread(() => { SetupCommunication(game, argsOptions); NotifyState(argsOptions); });
+            notifyState.Start();
+
+            Thread.Sleep(1000);
+            gameProxy.GameStarted = true;
+        }
+
+        private static void SetupCommunication(Game game, ArgsOptions argsOptions)
+        {
+            actionHandler = new ActionHandler(game);
+
+            List<string> otherServersList;
+            if (argsOptions.ServerEndpoints != null)
+            {
+                otherServersList = (List<string>)argsOptions.ServerEndpoints;
+            }
+            else
+            {
+                otherServersList = new List<string>();
+            }
+
+            outManager = new OutManager(argsOptions.ServerUrl, otherServersList);
+            stateHandler = new StateHandler();
+            connectionManager = new InManager(argsOptions.ServerUrl, actionHandler, null, stateHandler, true);
+
+            actionHandler.SetOutManager(outManager);
+            stateHandler.SetOutManager(outManager);
+
+            if (connectionManager.GotError())
+            {
+                Console.WriteLine("Error initializing. Exiting.");
+                return;
+            }
+        }
+
+        public static void NotifyState(ArgsOptions argsOptions)
+        {
+            while (true)
+            {
+                actionHandler.NotifyOfState();
+
+                Thread.Sleep(argsOptions.TickDuration);
+            }
         }
     }
 }

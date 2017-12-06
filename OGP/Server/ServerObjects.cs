@@ -1,4 +1,6 @@
-﻿namespace OGP.Server
+﻿using static OGP.Server.ActionHandler;
+
+namespace OGP.Server
 {
     public class Player
     {
@@ -7,6 +9,7 @@
         public int Y { get; internal set; }
         public int Score { get; internal set; }
         public bool Alive { get; internal set; }
+        public Move Move { get; set; }
     }
 
     public class Ghost

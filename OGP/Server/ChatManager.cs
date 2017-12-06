@@ -19,11 +19,6 @@ namespace OGP.Server
             clientsEndpoints = new List<string>();
         }
 
-        public List<string> GetClients()
-        {
-            return ClientsEndpoints;
-        }
-
         public void RegisterClient(string url)
         {
             Console.WriteLine("New client listening at " + url);
@@ -33,6 +28,11 @@ namespace OGP.Server
         public override object InitializeLifetimeService()
         {
             return null;
+        }
+
+        public List<string> GetClients()
+        {
+            return ClientsEndpoints;
         }
     }
 }

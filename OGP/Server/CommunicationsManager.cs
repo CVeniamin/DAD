@@ -41,23 +41,26 @@ namespace OGP.Server
 
         public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler, bool server)
         {
-            if (server)
-            {
-                Uri uri = new Uri(Url);
-                try
-                {
-                    TcpChannel channel = new TcpChannel(uri.Port);
-                    ChannelServices.RegisterChannel(channel, true);
-                }
-                catch (SocketException)
-                {
-                    Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
-                    initError = true;
-                    return; // Uncomment for client after refractoring
-                }
-                RemotingEndpoint endpoint = new RemotingEndpoint(this);
-                RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
-            }
+            Uri uri = new Uri(Url);
+
+            //if (server)
+            //{
+            //    try
+            //    {
+            //        TcpChannel channel = new TcpChannel(uri.Port);
+            //        ChannelServices.RegisterChannel(channel, true);
+            //    }
+            //    catch (SocketException)
+            //    {
+            //        Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
+            //        initError = true;
+            //        return; // Uncomment for client after refractoring
+            //    }
+                
+            //}
+
+            RemotingEndpoint endpoint = new RemotingEndpoint(this);
+            RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
 
             this.actionHandler = actionHandler;
             this.chatHandler = chatHandler;
@@ -217,8 +220,6 @@ namespace OGP.Server
                 Url = destination;
             }
 
-            Console.WriteLine("url " + Url);
-
             // If still nothing - fail
             if (Url.Length == 0)
             {
@@ -353,8 +354,12 @@ namespace OGP.Server
                 return null;
             }
 
-            long currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            long pendingDelay = currentTime - command.InsertedTime - delay;
+            long pendingDelay = -1 ;
+            if (command != null)
+            {
+                long currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                pendingDelay = currentTime - command.InsertedTime - delay;
+            }
 
             if (pendingDelay < 0)
             {

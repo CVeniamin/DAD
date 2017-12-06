@@ -7,17 +7,17 @@ namespace OGP.Server
     {
         bool GameOver { get; set; }
 
-        void Init(int numOfCoins);
+        void Init(List<string> clientsEndpoints,int numOfCoins);
 
-        void MoveLeft();
+        void MoveLeft(string playerId);
 
-        void MoveRight();
+        void MoveRight(string playerId);
 
-        void MoveUp();
+        void MoveUp(string playerId);
 
-        void MoveDown();
+        void MoveDown(string playerId);
 
-        void RegisterClients(List<string> clientsEndpoints);
+        void RegisterClient(string endpoint, int x, int y);
     }
 
     public interface IGameService
@@ -30,9 +30,13 @@ namespace OGP.Server
     {
         private String URL { get; set; }
 
-        public GameClient(String url)
+        private Player player;
+        public Player Player { get => player; set => player = value; }
+
+        public GameClient(String url, Player player)
         {
             this.URL = url;
+            this.player = player;
         }
     }
 
@@ -43,7 +47,6 @@ namespace OGP.Server
         private int minimumPlayers = 1;
         private int gameID;
         private bool gameOver;
-        private bool gameStarted;
         private GameState gameState;
 
         public List<GameClient> GameClients { get => gameClients; set => gameClients = value; }
@@ -51,8 +54,7 @@ namespace OGP.Server
         public int MinimumPlayers { get; set; }
         public int GameID { get => gameID; set => gameID = value; }
         public bool GameOver { get => gameOver; set => gameOver = value; }
-        public bool GameStarted { get => gameStarted; set => gameStarted = value; }
-
+        public GameState GameState { get => gameState; set => gameState = value; }
 
         public Game()
         {
@@ -61,7 +63,6 @@ namespace OGP.Server
         public Game(GameState state, int tickDuration, int minimumPlayers, int gameID)
         {
             this.gameState = state;
-            this.gameStarted = false;
             this.gameOver = false;
             this.tickDuration = tickDuration;
             this.minimumPlayers = minimumPlayers;
@@ -69,44 +70,59 @@ namespace OGP.Server
             this.gameClients = new List<GameClient>();
         }
 
-        public void Init(int numOfCoins)
+        public void Init(List<string> clientsEndpoints, int numOfCoins)
         {
             if(gameState != null)
             {
-                //gameState.Players = 
+                int i = 1;
+                foreach (var endpoint in clientsEndpoints)
+                {
+                    RegisterClient(endpoint, 8, i * 40);
+                    i++;
+                }
+
+                List<Player> gamePlayers = new List<Player>(); 
+                foreach(GameClient gameClient in GameClients)
+                {
+                    Console.WriteLine("player X" + gameClient.Player.X);
+                    gamePlayers.Add(gameClient.Player);
+                }
+
+                gameState.Players = gamePlayers;
                 gameState.Walls = CreateWalls();
                 gameState.Coins = CreateCoins(numOfCoins);
                 gameState.Ghosts = CreateGhosts();
             }
         }
 
-        public void MoveLeft()
+        public void MoveUp(string playerId)
         {
-            throw new NotImplementedException();
+            //Player p = gameState.GetPlayerByID(playerId);
+            //gameState.MovePlayerUp(ref p);
         }
 
-        public void MoveRight()
+        public void MoveDown(string playerId)
         {
-            throw new NotImplementedException();
+            //Player p = gameState.GetPlayerByID(playerId);
+            //gameState.MovePlayerDown(ref p);
         }
 
-        public void MoveUp()
+        public void MoveLeft(string playerId)
         {
-            throw new NotImplementedException();
+            Player p = gameState.GetPlayerByID(playerId);
+            gameState.MovePlayerLeft(ref p);
         }
 
-        public void MoveDown()
+        public void MoveRight(string playerId)
         {
-            throw new NotImplementedException();
+            Player p = gameState.GetPlayerByID(playerId);
+            gameState.MovePlayerRight(ref p);
         }
 
-        public void RegisterClients(List<string> clientsEndpoints)
+        public void RegisterClient(string endpoint, int x, int y)
         {
-            foreach(var endpoint in clientsEndpoints)
-            {
-                this.GameClients.Add(new GameClient(endpoint));
-                Console.WriteLine("Added new client at: " + endpoint);
-            }
+            this.GameClients.Add(new GameClient(endpoint, new Player { X= x, Y=  y, PlayerId = endpoint, Score = 0, Alive = true }));
+            Console.WriteLine("Added new client at: " + endpoint);
         }
 
         public override object InitializeLifetimeService()
