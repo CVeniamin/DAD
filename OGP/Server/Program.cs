@@ -11,6 +11,7 @@ namespace OGP.Server
         private static ChatManager chatManager;
         private static GameStateProxy gameProxy;
         private static GameState gameState;
+        private static Game game;
 
         private static void Main(string[] args)
         {
@@ -96,6 +97,7 @@ namespace OGP.Server
             }
 
             chatManager.GameStarted = true;
+            game.GameStarted = true;
 
             // TODO: start game here (in a new thread, so that process does not die)
         }
@@ -103,12 +105,14 @@ namespace OGP.Server
         private static void StartGame(ArgsOptions argsOptions)
         {
             gameState = new GameState();
-            Game game = new Game(argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
+            game = new Game(gameState, argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
             //gameState.Players = game.CreatePlayers();
 
-            gameState.Walls = game.CreateWalls();
-            gameState.Coins = game.CreateCoins(41);
-            gameState.Ghosts = game.CreateGhosts();
+            game.Init(41);
+
+            //gameState.Walls = game.CreateWalls();
+            //gameState.Coins = game.CreateCoins(41);
+            //gameState.Ghosts = game.CreateGhosts();
 
             gameProxy = new GameStateProxy(gameState);
             RemotingServices.Marshal(gameProxy, "GameStateProxy");

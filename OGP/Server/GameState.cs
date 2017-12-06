@@ -33,6 +33,12 @@ namespace OGP.Server
         private List<GameWall> walls;
         private List<GameServer> servers;
 
+        private bool gameStarted;
+        private bool gameOver;
+
+        public bool GameStarted { get => gameStarted; set => gameStarted = value; }
+        public bool GameOver { get => gameOver; set => gameOver = value; }
+
         public List<GamePlayer> Players { get => players; set => players = value; }
         public List<GameGhost> Ghosts { get => ghosts; set => ghosts = value; }
         public List<GameCoin> Coins { get => coins; set => coins = value; }
@@ -84,8 +90,15 @@ namespace OGP.Server
         private List<Wall> walls;
         private List<Server> servers;
 
+        private bool gameStarted;
+        private bool gameOver;
+
+        public bool GameStarted { get => gameStarted; set => gameStarted = value; }
+        public bool GameOver { get => gameOver; set => gameOver = value; }
+
         public GameState()
         {
+            this.GameStarted = false;
             players = new List<Player>();
             ghosts = new List<Ghost>();
             coins = new List<Coin>();
@@ -98,6 +111,7 @@ namespace OGP.Server
         public List<Coin> Coins { get => coins; set => coins = value; }
         public List<Wall> Walls { get => walls; set => walls = value; }
         public List<Server> Servers { get => servers; set => servers = value; }
+        
 
         internal GameStateView GetGameState()
         {
@@ -137,7 +151,6 @@ namespace OGP.Server
             {
                 gameStateView.AddServer(new GameServer(server.Url));
             }
-
             cachedGameStateView = gameStateView;
 
             return true;

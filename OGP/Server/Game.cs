@@ -7,7 +7,7 @@ namespace OGP.Server
     {
         bool GameOver { get; set; }
 
-        void Init();
+        void Init(int numOfCoins);
 
         void MoveLeft();
 
@@ -17,7 +17,7 @@ namespace OGP.Server
 
         void MoveDown();
 
-        void RegisterClient(string url);
+        void RegisterClients(List<string> clientsEndpoints);
     }
 
     public interface IGameService
@@ -42,34 +42,42 @@ namespace OGP.Server
         private int tickDuration;
         private int minimumPlayers = 1;
         private int gameID;
+        private bool gameOver;
+        private bool gameStarted;
+        private GameState gameState;
 
         public List<GameClient> GameClients { get => gameClients; set => gameClients = value; }
         public int TickDuration { get => tickDuration; set => tickDuration = value; }
         public int MinimumPlayers { get; set; }
         public int GameID { get => gameID; set => gameID = value; }
+        public bool GameOver { get => gameOver; set => gameOver = value; }
+        public bool GameStarted { get => gameStarted; set => gameStarted = value; }
+
 
         public Game()
         {
         }
 
-        public Game(int tickDuration, int minimumPlayers, int gameID)
+        public Game(GameState state, int tickDuration, int minimumPlayers, int gameID)
         {
+            this.gameState = state;
+            this.gameStarted = false;
+            this.gameOver = false;
             this.tickDuration = tickDuration;
             this.minimumPlayers = minimumPlayers;
             this.gameID = gameID;
             this.gameClients = new List<GameClient>();
         }
 
-        public bool GameOver { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public string SayHello()
+        public void Init(int numOfCoins)
         {
-            return "Hello";
-        }
-
-        public void Init()
-        {
-            throw new NotImplementedException();
+            if(gameState != null)
+            {
+                //gameState.Players = 
+                gameState.Walls = CreateWalls();
+                gameState.Coins = CreateCoins(numOfCoins);
+                gameState.Ghosts = CreateGhosts();
+            }
         }
 
         public void MoveLeft()
@@ -92,10 +100,13 @@ namespace OGP.Server
             throw new NotImplementedException();
         }
 
-        public void RegisterClient(string url)
+        public void RegisterClients(List<string> clientsEndpoints)
         {
-            this.GameClients.Add(new GameClient(url));
-            Console.WriteLine("Added new client at: " + url);
+            foreach(var endpoint in clientsEndpoints)
+            {
+                this.GameClients.Add(new GameClient(endpoint));
+                Console.WriteLine("Added new client at: " + endpoint);
+            }
         }
 
         public override object InitializeLifetimeService()

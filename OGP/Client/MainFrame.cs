@@ -56,6 +56,7 @@ namespace OGP.Client
         private IChatManager chatManager;
         private ChatClient chatClient;
         private GameStateProxy gameState;
+        private GameStateView gameView;
 
         internal MainFrame(ArgsOptions args)
         {
@@ -76,26 +77,39 @@ namespace OGP.Client
             chatClient = new ChatClient(this, args.Pid, clientHostName);
             RemotingServices.Marshal(chatClient, "ChatClient");
 
-            chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
+            chatManager = (IChatManager) Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
             chatManager.RegisterClient(clientHostName);
+
+            moves = GetMoves(args.TraceFile);
+            gameState = (GameStateProxy) Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
 
             Thread t = new Thread(() => WaitForClientsToStart(chatClient, chatManager));
             t.Start();
 
-            moves = GetMoves(args.TraceFile);
-            gameState = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
+            gameView = gameState.GetGameState();
+            DisplayWalls(gameView);
+            DisplayGhosts(gameView);
+            DisplayCoins(gameView);
 
-            this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 49);
+            this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 40, 49);
             this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
 
-            Thread move = new Thread(() => Play(this.player, args.TickDuration, args.TraceFile, moves));
-            move.Start();
+            //TODO: each client should have a drawn form containing coins, ghosts and walls but game should be paused
+            //it's only started after server notifities with game.GameStarted = true;
+            //we should keep waiting until that flag is setted
 
-            label2.Visible = false;
+            Play(this.player, args.TickDuration, args.TraceFile, moves);
+            
+            label2.Visible = true;
         }
 
         private void Play(PictureBox image, int tick, string filename, List<string> moves)
         {
+            while (!chatManager.GameStarted)
+            {
+                Thread.Sleep(1000);
+            }
+
             int roundId = 0;
             int finalRound = moves.Count - 1;
             while (roundId != finalRound)
@@ -117,7 +131,7 @@ namespace OGP.Client
                 if (goupNew)
                 {
                     if (image.Top > (boardTop))
-                        pacman.Top -= speed;
+                        image.Top -= speed;
                 }
                 if (godownNew)
                 {
@@ -226,6 +240,8 @@ namespace OGP.Client
             {
                 Thread.Sleep(1000);
             }
+
+            label2.Text = "Started";
 
             if (chat != null && manager != null)
             {
@@ -542,10 +558,16 @@ namespace OGP.Client
 
         private void MainFrame_Load(object sender, EventArgs e)
         {
-            GameStateView gameView = gameState.GetGameState();
-            DisplayWalls(gameView);
-            DisplayGhosts(gameView);
-            DisplayCoins(gameView);
+            
+        }
+
+        private void GameDidStart()
+        {
+            while (!gameView.GameStarted)
+            {
+                Thread.Sleep(1000);
+            }
+
         }
 
         public void AddMsg(string s)
