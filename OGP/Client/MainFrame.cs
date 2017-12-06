@@ -60,6 +60,8 @@ namespace OGP.Client
 
         private OutManager outManager;
         private InManager inManager;
+        private string CHAT_MANAGER = "/ChatManager";
+        private string GAME_STATE_PROXY = "/GameStateProxy";
 
         internal MainFrame(ArgsOptions args)
         {
@@ -68,37 +70,32 @@ namespace OGP.Client
             Uri clientUri = new Uri(args.ClientUrl);
             string clientHostName = GetHostName(clientUri);
 
-            List<Uri> serversURIs = new List<Uri>();
-            foreach (var url in args.ServerEndpoints)
-            {
-                serversURIs.Add(new Uri(url));
-            }
-            string serverHostName = GetHostName(serversURIs[0]);
+            outManager = new OutManager(args.ClientUrl, (List<string>) args.ServerEndpoints);
+            ChatHandler chatHandler = new ChatHandler();
+            chatHandler.SetOutManager(outManager);
+            inManager = new InManager(args.ClientUrl, null, chatHandler, null, false);
+
+            string masterServer = GetHostName(outManager.GetMasterServer());
+            //StateHandler stateHandler = new StateHandler((GameStateView gsv) =>
+            //{
+            //    // TEST SAMPLE
+            //    // NOT FOR SALE
+            // clientUri.AbsolutePath.Substring(1)   DisplayCoins(gsv);
+            //});
+
 
             TcpChannel channel = new TcpChannel(clientUri.Port);
             ChannelServices.RegisterChannel(channel, true);
+
             chatClient = new ChatClient(this, args.Pid, clientHostName);
             RemotingServices.Marshal(chatClient, "ChatClient");
-
-            chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
+            
+            chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), masterServer + CHAT_MANAGER);
             chatManager.RegisterClient(clientHostName);
-            
+
             moves = GetMoves(args.TraceFile);
-            gameState = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
+            gameState = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), masterServer + GAME_STATE_PROXY);
             
-            ChatHandler chatHandler = new ChatHandler();
-            StateHandler stateHandler = new StateHandler((GameStateView gsv) =>
-            {
-                // TEST SAMPLE
-                // NOT FOR SALE
-                DisplayCoins(gsv);
-            });
-
-            outManager = new OutManager(args.ClientUrl, (List<string>)args.ServerEndpoints);
-            inManager = new InManager(args.ClientUrl, null, chatHandler, stateHandler);
-
-            chatHandler.SetOutManager(outManager);
-
             gameView = gameState.GetGameState();
             DisplayWalls(gameView);
             DisplayGhosts(gameView);
@@ -123,7 +120,6 @@ namespace OGP.Client
             {
                 Thread.Sleep(1000);
             }
-
             int roundId = 0;
             int finalRound = moves.Count - 1;
             while (roundId != finalRound)

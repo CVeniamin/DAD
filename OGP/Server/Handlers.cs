@@ -82,8 +82,9 @@ namespace OGP.Server
     public class StateHandler : IHandler
     {
         private OutManager outManager;
+        public delegate void StateDelegate(GameStateView view);
 
-        public StateHandler(eventtocallontick)
+        public StateHandler(StateDelegate stateDelegate)
         {
             
         }

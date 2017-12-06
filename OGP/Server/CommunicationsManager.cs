@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -36,25 +37,27 @@ namespace OGP.Server
 
         private CommandQueue commandQueue;
         private Thread backgroundThread;
+        private TcpChannel channel;
 
-        public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler)
+        public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler, bool server)
         {
-            Uri uri = new Uri(Url);
-
-            try
+            if (server)
             {
-                TcpChannel channel = new TcpChannel(uri.Port);
-                ChannelServices.RegisterChannel(channel, true);
+                Uri uri = new Uri(Url);
+                try
+                {
+                    TcpChannel channel = new TcpChannel(uri.Port);
+                    ChannelServices.RegisterChannel(channel, true);
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
+                    initError = true;
+                    return; // Uncomment for client after refractoring
+                }
+                RemotingEndpoint endpoint = new RemotingEndpoint(this);
+                RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
             }
-            catch (SocketException)
-            {
-                /*Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
-                initError = true;
-                return;*/ // Uncomment for client after refractoring
-            }
-
-            RemotingEndpoint endpoint = new RemotingEndpoint(this);
-            RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
 
             this.actionHandler = actionHandler;
             this.chatHandler = chatHandler;
@@ -170,6 +173,11 @@ namespace OGP.Server
 
         private Thread backgroundThread;
 
+
+        public Uri GetMasterServer()
+        {
+            return new Uri(masterServer);
+        }
         public OutManager(string selfUrl, List<string> serverList)
         {
             if (serverList.Count == 0)
@@ -187,13 +195,11 @@ namespace OGP.Server
             this.selfUrl = selfUrl;
 
             backgroundThread = new Thread(SenderThread);
-            Console.WriteLine("debug123");
             backgroundThread.Start();
         }
 
         public bool SendCommand(Command command, string destination)
         {
-            Console.WriteLine("otrdgoushj");
 
             string Url = null;
             if (destination == MASTER_SERVER)
@@ -226,7 +232,6 @@ namespace OGP.Server
                 outQueues.Add(Url, commandQueue);
             }
 
-            Console.WriteLine("i9sdjf9sidj");
             commandQueue.Enqueue(command);
             activeQueues.Add(commandQueue);
 
@@ -255,12 +260,10 @@ namespace OGP.Server
 
         private void SenderThread()
         {
-            Console.WriteLine("running");
             while (true)
             {
                 foreach (CommandQueue commandQueue in activeQueues)
                 {
-                    Console.WriteLine("ihhislhid");
                     string Url = outQueues.FirstOrDefault(x => x.Value == commandQueue).Key;
                     new Thread(() =>
                     {
@@ -272,7 +275,6 @@ namespace OGP.Server
 
                             try
                             {
-                                Console.WriteLine("joaijsd");
                                 endpoint.Request(command);
                             }
                             catch (Exception ex)
@@ -287,14 +289,13 @@ namespace OGP.Server
                     }).Start();
                 }
                 activeQueues.Clear();
-                Console.WriteLine("about to sleep");
 
                 try
                 {
                     Thread.Sleep(Timeout.Infinite);
                 } catch (ThreadInterruptedException)
                 {
-                    Console.WriteLine("podnemite mne veki");
+                    Console.WriteLine("OutManager got exception on ThreadSleep");
                 }
             }
         }

@@ -40,11 +40,9 @@ namespace OGP.Server
                 }
 
                 OutManager outManager = new OutManager(argsOptions.ServerUrl, otherServersList);
-                InManager connectionManager = new InManager(argsOptions.ServerUrl, actionHandler, null, null);
+                InManager connectionManager = new InManager(argsOptions.ServerUrl, actionHandler, null, null, true);
 
                 actionHandler.SetOutManager(outManager);
-
-                Console.WriteLine("iausdas");
 
                 if (connectionManager.GotError())
                 {
@@ -119,7 +117,7 @@ namespace OGP.Server
                 Thread.Sleep(1000);
                 Console.Write(".");
             }
-
+            Console.WriteLine("Game STarted");
             chatManager.GameStarted = true;
             game.GameStarted = true;
 
