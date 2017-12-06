@@ -24,7 +24,7 @@ namespace OGP.Client
                 if (argsOptions.Pcs == true)
                 {
                     Console.WriteLine("Suppressing output");
-                    Console.SetOut(new SuppressedWriter());
+                    // Console.SetOut(new SuppressedWriter());
                 }
 
                 Application.EnableVisualStyles();

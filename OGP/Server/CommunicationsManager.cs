@@ -25,7 +25,7 @@ namespace OGP.Server
         }
     }
 
-    internal class InManager
+    public class InManager
     {
         private bool initError = false;
         private bool frozen = false;
@@ -48,9 +48,9 @@ namespace OGP.Server
             }
             catch (SocketException)
             {
-                Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
+                /*Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
                 initError = true;
-                return;
+                return;*/ // Uncomment for client after refractoring
             }
 
             RemotingEndpoint endpoint = new RemotingEndpoint(this);
@@ -103,6 +103,7 @@ namespace OGP.Server
         internal void Enqueue(Command command)
         {
             commandQueue.Enqueue(command);
+            backgroundThread.Interrupt();
         }
 
         public void PassCommandToHandler(Command command)
@@ -112,20 +113,20 @@ namespace OGP.Server
                 case Type.Action:
                     if (actionHandler != null)
                     {
-                        actionHandler.Process(command.Args);
+                        actionHandler.Process(command.Sender, command.Args);
                     }
                     break;
 
                 case Type.Chat:
                     if (chatHandler != null)
                     {
-                        chatHandler.Process(command.Args);
+                        chatHandler.Process(command.Sender, command.Args);
                     }
                     break;
 
                 case Type.State:
                     if (stateHandler != null) {
-                        stateHandler.Process(command.Args);
+                        stateHandler.Process(command.Sender, command.Args);
                     }
                     break;
             }
@@ -143,11 +144,11 @@ namespace OGP.Server
         }
     }
 
-    internal enum Type
+    public enum Type
     { Action, Chat, State };
 
     [Serializable]
-    internal class Command
+    public class Command
     {
         public Type Type { get; set; }
         public object Args { get; set; }
@@ -155,7 +156,7 @@ namespace OGP.Server
         internal long InsertedTime { get; set; }
     }
 
-    internal class OutManager
+    public class OutManager
     {
         public const string MASTER_SERVER = "master";
 
@@ -173,7 +174,7 @@ namespace OGP.Server
         {
             if (serverList.Count == 0)
             {
-                throw new Exception("Missing servers init vector");
+                serverList.Add(selfUrl);
             }
 
             this.outQueues = new Dictionary<string, CommandQueue>();
@@ -186,12 +187,14 @@ namespace OGP.Server
             this.selfUrl = selfUrl;
 
             backgroundThread = new Thread(SenderThread);
-
+            Console.WriteLine("debug123");
             backgroundThread.Start();
         }
 
         public bool SendCommand(Command command, string destination)
         {
+            Console.WriteLine("otrdgoushj");
+
             string Url = null;
             if (destination == MASTER_SERVER)
             {
@@ -208,6 +211,8 @@ namespace OGP.Server
                 Url = destination;
             }
 
+            Console.WriteLine("url " + Url);
+
             // If still nothing - fail
             if (Url.Length == 0)
             {
@@ -221,8 +226,11 @@ namespace OGP.Server
                 outQueues.Add(Url, commandQueue);
             }
 
+            Console.WriteLine("i9sdjf9sidj");
             commandQueue.Enqueue(command);
             activeQueues.Add(commandQueue);
+
+            backgroundThread.Interrupt();
 
             return true;
         }
@@ -247,10 +255,12 @@ namespace OGP.Server
 
         private void SenderThread()
         {
+            Console.WriteLine("running");
             while (true)
             {
                 foreach (CommandQueue commandQueue in activeQueues)
                 {
+                    Console.WriteLine("ihhislhid");
                     string Url = outQueues.FirstOrDefault(x => x.Value == commandQueue).Key;
                     new Thread(() =>
                     {
@@ -262,6 +272,7 @@ namespace OGP.Server
 
                             try
                             {
+                                Console.WriteLine("joaijsd");
                                 endpoint.Request(command);
                             }
                             catch (Exception ex)
@@ -276,8 +287,15 @@ namespace OGP.Server
                     }).Start();
                 }
                 activeQueues.Clear();
+                Console.WriteLine("about to sleep");
 
-                Thread.Sleep(Timeout.Infinite);
+                try
+                {
+                    Thread.Sleep(Timeout.Infinite);
+                } catch (ThreadInterruptedException)
+                {
+                    Console.WriteLine("podnemite mne veki");
+                }
             }
         }
 
@@ -339,7 +357,10 @@ namespace OGP.Server
 
             if (pendingDelay < 0)
             {
-                Thread.Sleep(-(int)pendingDelay);
+                try
+                {
+                    Thread.Sleep(-(int)pendingDelay);
+                } catch (ThreadInterruptedException) { }
             }
 
             return command;
@@ -355,8 +376,8 @@ namespace OGP.Server
         {
             endpoints = new Dictionary<string, RemotingEndpoint>();
 
-            channel = new TcpChannel();
-            ChannelServices.RegisterChannel(channel, true);
+            //channel = new TcpChannel();
+            //ChannelServices.RegisterChannel(channel, true);
         }
 
         public RemotingEndpoint GetByUrl(string Url)

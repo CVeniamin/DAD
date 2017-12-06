@@ -58,6 +58,9 @@ namespace OGP.Client
         private GameStateProxy gameState;
         private GameStateView gameView;
 
+        private OutManager outManager;
+        private InManager inManager;
+
         internal MainFrame(ArgsOptions args)
         {
             InitializeComponent();
@@ -77,14 +80,24 @@ namespace OGP.Client
             chatClient = new ChatClient(this, args.Pid, clientHostName);
             RemotingServices.Marshal(chatClient, "ChatClient");
 
-            chatManager = (IChatManager) Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
+            chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), serverHostName + "/ChatManager");
             chatManager.RegisterClient(clientHostName);
-
+            
             moves = GetMoves(args.TraceFile);
-            gameState = (GameStateProxy) Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
+            gameState = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), serverHostName + "/GameStateProxy");
+            
+            ChatHandler chatHandler = new ChatHandler();
+            StateHandler stateHandler = new StateHandler((GameStateView gsv) =>
+            {
+                // TEST SAMPLE
+                // NOT FOR SALE
+                DisplayCoins(gsv);
+            });
 
-            Thread t = new Thread(() => WaitForClientsToStart(chatClient, chatManager));
-            t.Start();
+            outManager = new OutManager(args.ClientUrl, (List<string>)args.ServerEndpoints);
+            inManager = new InManager(args.ClientUrl, null, chatHandler, stateHandler);
+
+            chatHandler.SetOutManager(outManager);
 
             gameView = gameState.GetGameState();
             DisplayWalls(gameView);
@@ -94,11 +107,12 @@ namespace OGP.Client
             this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 40, 49);
             this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
 
+            Thread t = new Thread(() => { WaitForClientsToStart(chatClient, chatManager); Play(this.player, args.TickDuration, args.TraceFile, moves); });
+            t.Start();
+
             //TODO: each client should have a drawn form containing coins, ghosts and walls but game should be paused
             //it's only started after server notifities with game.GameStarted = true;
             //we should keep waiting until that flag is setted
-
-            Play(this.player, args.TickDuration, args.TraceFile, moves);
             
             label2.Visible = true;
         }
@@ -115,6 +129,12 @@ namespace OGP.Client
             while (roundId != finalRound)
             {
                 label1.Text = "Score: " + score;
+                
+                outManager.SendCommand(new Command
+                {
+                    Type = Server.Type.Action,
+                    Args = moves[roundId]
+                }, "master");
 
                 MovePacMan(image, moves[roundId]);
 

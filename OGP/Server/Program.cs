@@ -25,18 +25,42 @@ namespace OGP.Server
                 }
 
                 Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
-
-                ActionHandler actionHandler = new ActionHandler();
-                ChatHandler chatHandler = new ChatHandler();
-                StateHandler stateHandler = new StateHandler();
                 
-                InManager connectionManager = new InManager(argsOptions.ServerUrl, actionHandler, chatHandler, stateHandler);
+                gameState = new GameState();
+
+                ActionHandler actionHandler = new ActionHandler(gameState);
+
+                List<string> otherServersList;
+                if (argsOptions.ServerEndpoints != null)
+                {
+                    otherServersList = (List<string>)argsOptions.ServerEndpoints;
+                } else
+                {
+                    otherServersList = new List<string>();
+                }
+
+                OutManager outManager = new OutManager(argsOptions.ServerUrl, otherServersList);
+                InManager connectionManager = new InManager(argsOptions.ServerUrl, actionHandler, null, null);
+
+                actionHandler.SetOutManager(outManager);
+
+                Console.WriteLine("iausdas");
 
                 if (connectionManager.GotError())
                 {
                     Console.WriteLine("Error initializing. Exiting.");
                     return;
                 }
+
+                new Thread(() =>
+                {
+                    while (true)
+                    {
+                        actionHandler.NotifyOfState();
+
+                        Thread.Sleep(argsOptions.TickDuration);
+                    }
+                }).Start();
 
                 chatManager = new ChatManager();
                 RemotingServices.Marshal(chatManager, "ChatManager");
@@ -104,7 +128,6 @@ namespace OGP.Server
 
         private static void StartGame(ArgsOptions argsOptions)
         {
-            gameState = new GameState();
             game = new Game(gameState, argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
             //gameState.Players = game.CreatePlayers();
 

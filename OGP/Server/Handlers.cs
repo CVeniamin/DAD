@@ -1,43 +1,104 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OGP.Server
 {
-    internal class ActionHandler
+    public interface IHandler
     {
-        public ActionHandler()
+        void Process(string source, object args);
+        void SetOutManager(OutManager outManager);
+    }
+
+    public class ActionHandler : IHandler
+    {
+        private HashSet<string> stateRequestors;
+        private OutManager outManager;
+        private GameState gameState;
+
+        public ActionHandler(GameState gameState)
         {
+            stateRequestors = new HashSet<string>();
+            this.gameState = gameState;
+
             // TODO: set up timer
         }
 
-        internal void Process(object args)
+        public void Process(string source, object args)
         {
+            Console.WriteLine("got command on server");
+            Console.WriteLine(args);
+
             // Up/down/left/right
+
+            stateRequestors.Add(source);
+        }
+
+        internal void NotifyOfState()
+        {
+            if (this.stateRequestors.Count == 0)
+            {
+                return;
+            }
+
+            Console.WriteLine("notifying of state to " + this.stateRequestors.Count);
+            foreach (string Url in this.stateRequestors)
+            {
+                outManager.SendCommand(new Command
+                {
+                    Type = Type.State,
+                    Args = this.gameState.GetGameState()
+                }, Url);
+            }
+            this.stateRequestors.Clear();
+        }
+        
+        public void SetOutManager(OutManager outManager)
+        {
+            this.outManager = outManager;
         }
     }
 
-    internal class ChatHandler
+    public class ChatHandler : IHandler
     {
+
+        private OutManager outManager;
+
         public ChatHandler()
         {
             
         }
 
-        internal void Process(object args)
+        public void Process(string source, object args)
         {
             // Chat message received
         }
+
+        public void SetOutManager(OutManager outManager)
+        {
+            this.outManager = outManager;
+        }
     }
 
-    internal class StateHandler
+    public class StateHandler : IHandler
     {
-        public StateHandler()
+        private OutManager outManager;
+
+        public StateHandler(eventtocallontick)
         {
             
         }
 
-        internal void Process(object args)
+        public void Process(string source, object args)
         {
+            GameStateView gameStateView = (GameStateView)args;
+            Console.WriteLine("Ghosts count: " + gameStateView.Ghosts.Count);
+            
             // Received state from other server (master?) check and apply
+        }
+
+        public void SetOutManager(OutManager outManager)
+        {
+            this.outManager = outManager;
         }
     }
 }
