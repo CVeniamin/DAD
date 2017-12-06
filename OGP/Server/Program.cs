@@ -114,13 +114,12 @@ namespace OGP.Server
 
             gameProxy = new GameStateProxy(gameState);
             RemotingServices.Marshal(gameProxy, "GameStateProxy");
-
-            //chatManager.GameStarted = true;
             
             Thread notifyState = new Thread(() => { SetupCommunication(game, argsOptions); NotifyState(argsOptions); });
             notifyState.Start();
 
             Thread.Sleep(1000);
+            chatManager.GameStarted = true;
             gameProxy.GameStarted = true;
         }
 

@@ -148,15 +148,13 @@ namespace OGP.Client
                 Console.Write(".");
             }
 
-            Console.WriteLine("moves lenght" + moves.Count);
-
             int roundId = 0;
             int finalRound = moves.Count - 1;
 
             while (roundId <= finalRound)
             {
                 Console.WriteLine(coinsArray.Length);
-                //label2.SetPropertyThreadSafe(() => label2.Text, moves[roundId]);
+                label2.SetPropertyThreadSafe(() => label2.Text, moves[roundId]);
                 label1.Text = "Score: " + score;
                 
                 outManager.SendCommand(new Command
@@ -556,8 +554,6 @@ namespace OGP.Client
         ///
         private PictureBox DrawElement(string ghostname, string tag,  Bitmap resource, int x, int y)
         {
-            Console.WriteLine("ghosts  " + ghostname);
-
             PictureBox element = new PictureBox
             {
                 BackColor = Color.Transparent,
@@ -585,7 +581,6 @@ namespace OGP.Client
         private void DisplayWalls(GameStateView gameView)
         {
             int numberOfWalls = gameView.Walls.Count;
-            Console.WriteLine("numberWalls " + numberOfWalls);
             this.wallsArray = Enumerable.Repeat(0, numberOfWalls).Select(c => new PictureBox()).ToArray();
             int i = 0;
             foreach (GameWall wall in gameView.Walls)

@@ -296,7 +296,6 @@ namespace OGP.Server
                     Thread.Sleep(Timeout.Infinite);
                 } catch (ThreadInterruptedException)
                 {
-                    Console.WriteLine("OutManager got exception on ThreadSleep");
                 }
             }
         }
