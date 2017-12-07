@@ -38,23 +38,9 @@ namespace OGP.Server
                     return;
                 }
 
-                if (!gameOn)
+                if (gameOn)
                 {
-                    switch (movement.Direction)
-                    {
-                        case Direction.UP:
-                            player.Y--;
-                            break;
-                        case Direction.DOWN:
-                            player.Y++;
-                            break;
-                        case Direction.LEFT:
-                            player.X--;
-                            break;
-                        case Direction.RIGHT:
-                            player.X++;
-                            break;
-                    }
+                    player.Direction = movement.Direction;
                 }
                 else
                 {
@@ -81,7 +67,36 @@ namespace OGP.Server
         internal void FinilizeTick(long tickId)
         {
             // Finish processing the tick, write state to file, etc.
+
+            MovePlayers(); // This will stop movement if player hits the wall
+            // MoveGhosts(); // This will kill players
+            // CollectCoins(); // This will update player scores for alive players
+
+            // WriteState(); // This should write the game state to file or standard output or something
+
             DispatchState();
+        }
+
+        private void MovePlayers()
+        {
+            foreach (Player player in gameState.Players)
+            {
+                switch (player.Direction)
+                {
+                    case Direction.UP:
+                        player.Y--;
+                        break;
+                    case Direction.DOWN:
+                        player.Y++;
+                        break;
+                    case Direction.LEFT:
+                        player.X--;
+                        break;
+                    case Direction.RIGHT:
+                        player.X++;
+                        break;
+                }
+            }
         }
 
         private void DispatchState()
