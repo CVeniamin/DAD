@@ -49,9 +49,7 @@ namespace OGP.Client
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
-
-        private GameStateView gameStateView;
-
+        
         private Object lockRoundId = new Object();
 
         private string Pid;
@@ -64,7 +62,7 @@ namespace OGP.Client
             this.Pid = Pid;
             this.outManager = outManager;
 
-            new Thread(() => { Play(); }).Start();
+            // new Thread(() => { Play(); }).Start();
 
             label2.Visible = true;
             label2.Text = "Waiting for players...";
@@ -72,7 +70,6 @@ namespace OGP.Client
 
         private void Play()
         {
-            DisplayPlayers(gameStateView);
             PictureBox player = playersArray[0];
 
             int tick = 20;
@@ -184,6 +181,11 @@ namespace OGP.Client
                     roundId++;
                 }
             }
+        }
+
+        internal void ApplyGameStateView(GameStateView gameStateView)
+        {
+            Display(gameStateView);
         }
 
         private void MovePacMan(PictureBox player, string move)

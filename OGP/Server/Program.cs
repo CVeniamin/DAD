@@ -1,6 +1,7 @@
 ﻿using Sprache;
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -30,10 +31,19 @@ namespace OGP.Server
             }
 
             Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
-            
+
             // Create and register a remoting channel
-            TcpChannel channel = new TcpChannel(new Uri(argsOptions.ServerUrl).Port);
-            ChannelServices.RegisterChannel(channel, true);
+            try
+            {
+                TcpChannel channel = new TcpChannel(new Uri(argsOptions.ServerUrl).Port);
+                ChannelServices.RegisterChannel(channel, true);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine(ex.SocketErrorCode + " " + ex.NativeErrorCode + " " + ex.Message + " " + ex.HelpLink);
+                Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL"); // TODO: Remove?
+                throw new Exception("Socket not available");
+            }
 
             // Create GameState object - used to store the current local state of the system
             GameState gameState = new GameState(existsingServersList);
@@ -46,7 +56,10 @@ namespace OGP.Server
             actionHandler.SetOutManager(outManager);
 
             // Create state handler - for processing state updates (when slave)
-            StateHandler stateHandler = new StateHandler(gameState);
+            StateHandler stateHandler = new StateHandler((GameStateView gameStateView) =>
+            {
+                gameState.Patch(gameStateView);
+            });
             stateHandler.SetOutManager(outManager);
 
             // Create InManager - Remoting endpoint is made available here

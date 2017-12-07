@@ -24,6 +24,11 @@ namespace OGP.Server
         {
             connectionManager.Enqueue(command);
         }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 
     public class InManager
@@ -41,17 +46,6 @@ namespace OGP.Server
         {
             Uri uri = new Uri(Url);
             
-            try
-            {
-                TcpChannel channel = new TcpChannel(uri.Port);
-                ChannelServices.RegisterChannel(channel, true);
-            }
-            catch (SocketException)
-            {
-                Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL"); // TODO: Remove?
-                throw new Exception("Socket not available");
-            }
-
             RemotingEndpoint endpoint = new RemotingEndpoint(this);
             RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
 
@@ -64,7 +58,7 @@ namespace OGP.Server
             handlerThread = new Thread(ProcessIncomingMessages);
             handlerThread.Start();
 
-            Console.WriteLine("Server Registered at " + Url);
+            Console.WriteLine("InManager Registered at " + Url);
         }
 
         private void ProcessIncomingMessages()

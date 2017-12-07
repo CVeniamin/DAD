@@ -206,7 +206,7 @@ namespace OGP.Server
             }
         }
 
-        internal void Patch(GameState newGameState)
+        internal void Patch(GameStateView newGameStateView)
         {
             // TODO: newGameState
         }

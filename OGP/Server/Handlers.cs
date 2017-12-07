@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace OGP.Server
 {
@@ -27,6 +28,8 @@ namespace OGP.Server
 
         public void Process(string source, object action)
         {
+            Console.WriteLine("Received Command from {0}", source);
+
             if (action is GameMovement movement)
             {
                 // Resolve player URL to Player object
@@ -106,7 +109,7 @@ namespace OGP.Server
                 return;
             }
 
-            Console.WriteLine("Notifying {0} recipients of current state", this.stateDispatchDestinations.Count);
+            // Console.WriteLine("Notifying {0} recipients of current state", this.stateDispatchDestinations.Count);
 
             foreach (string Url in this.stateDispatchDestinations)
             {
@@ -150,16 +153,20 @@ namespace OGP.Server
     public class StateHandler : IHandler
     {
         private OutManager outManager;
-        private GameState gameState;
+        private Action<GameStateView> onNewGameStateView;
 
-        public StateHandler(GameState gameState)
+        public StateHandler(Action<GameStateView> onNewGameStateView)
         {
-            this.gameState = gameState;
+            this.onNewGameStateView = onNewGameStateView;
         }
 
         public void Process(string source, object args)
         {
-            gameState.Patch((GameState)args);
+            try
+            {
+                onNewGameStateView((GameStateView)args);
+            }
+            catch (ThreadInterruptedException) { }
         }
 
         public void SetOutManager(OutManager outManager)

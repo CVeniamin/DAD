@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -16,6 +17,7 @@ namespace OGP.Client
     internal class Program
     {
         delegate void PrintChatMessage(string x);
+        delegate void IngestGameStateView(GameStateView gameStateView);
 
         [STAThread]
         public static void Main(string[] args)
@@ -27,8 +29,11 @@ namespace OGP.Client
                 return;
             }
 
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
             List<string> existsingServersList = argsOptions.ServerEndpoints != null ? (List<string>)argsOptions.ServerEndpoints : new List<string>();
-            List<string> replayMoves = argsOptions.TraceFile != null ? LoadMoves(argsOptions.TraceFile) : new List<string>();
+            Dictionary<int, Direction> replayMoves = argsOptions.TraceFile != null ? LoadMoves(argsOptions.TraceFile) : new Dictionary<int, Direction>();
 
             if (argsOptions.Pcs == true)
             {
@@ -39,8 +44,17 @@ namespace OGP.Client
             Console.WriteLine("Started Client with PID: " + argsOptions.Pid);
 
             // Create and register a remoting channel
-            TcpChannel channel = new TcpChannel(new Uri(argsOptions.ClientUrl).Port);
-            ChannelServices.RegisterChannel(channel, true);
+            try
+            {
+                TcpChannel channel = new TcpChannel(new Uri(argsOptions.ClientUrl).Port);
+                ChannelServices.RegisterChannel(channel, true);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine(ex.SocketErrorCode + " " + ex.NativeErrorCode + " " + ex.Message + " " + ex.HelpLink);
+                Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL"); // TODO: Remove?
+                throw new Exception("Socket not available");
+            }
 
             // Create GameState object - used to store the current local state of the system
             GameState gameState = new GameState(existsingServersList);
@@ -60,50 +74,18 @@ namespace OGP.Client
             chatHandler.SetOutManager(outManager);
 
             // Create state handler - for processing state updates (when slave)
-            StateHandler stateHandler = new StateHandler(gameState);
+            StateHandler stateHandler = new StateHandler((GameStateView gameStateView) =>
+            {
+                mainForm.Invoke(new IngestGameStateView(mainForm.ApplyGameStateView), gameStateView);
+            });
             stateHandler.SetOutManager(outManager);
             
             // Create InManager - Remoting endpoint is made available here
             InManager inManager = new InManager(argsOptions.ClientUrl, null, chatHandler, stateHandler);
 
             // Begin client Timer
-            new Thread(() => {
-                int tickId = 0;
-                bool replayingMoves = replayMoves.Count > 0;
-
-                while (true)
-                {
-                    if (replayingMoves)
-                    {
-                        string nextMove = replayMoves.ElementAtOrDefault(tickId);
-                        if (nextMove != null)
-                        {
-                            // TODO: send nextMove
-                        }
-                        else
-                        {
-                            replayingMoves = false;
-                        }
-                    }
-                    else
-                    {
-                        // Get moves from keyboard, or send idle events regardless (only send moves when there is a direction change)
-                    }
-                    
-                    // TODO: send request for state to server, in case no keyboard input was made
-
-                    try
-                    {
-                        Thread.Sleep(argsOptions.TickDuration);
-                    }
-                    catch (ThreadInterruptedException) { }
-
-                    tickId++;
-                }
-            }).Start();
+            new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions)).Start();
             
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(mainForm);
 
             // Start listening for input
@@ -122,9 +104,65 @@ namespace OGP.Client
             }
         }
 
-        private static List<string> LoadMoves(string filename)
+        private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions)
         {
-            List<string> moves = new List<string>();
+            {
+                int tickId = 0;
+                bool replayingMoves = replayMoves.Count > 0;
+                bool sentThisTick = false;
+
+                while (true)
+                {
+                    sentThisTick = false;
+
+                    /*if (replayingMoves && replayMoves.TryGetValue(tickId, out Direction nextMove))
+                    {
+                        if (Enum.IsDefined(typeof(Direction), nextMove))
+                        {
+                            outManager.SendCommand(new Command
+                            {
+                                Type = Server.CommandType.Action,
+                                Args = new GameMovement
+                                {
+                                    Direction = nextMove
+                                }
+                            }, OutManager.MASTER_SERVER);
+
+                            sentThisTick = true;
+                        }
+                    }
+                    else
+                    {
+                        // Get moves from keyboard, or send idle events regardless (only send moves when there is a direction change)
+                    }*/
+
+                    // TODO: send request for state to server, in case no keyboard input was made
+                    if (!sentThisTick)
+                    {
+                        outManager.SendCommand(new Command
+                        {
+                            Type = Server.CommandType.Action,
+                            Args = new ClientSync
+                            {
+                                Pid = argsOptions.Pid
+                            }
+                        }, OutManager.MASTER_SERVER);
+                    }
+
+                    try
+                    {
+                        Thread.Sleep(argsOptions.TickDuration);
+                    }
+                    catch (ThreadInterruptedException) { }
+
+                    tickId++;
+                }
+            }
+        }
+
+        private static Dictionary<int, Direction> LoadMoves(string filename)
+        {
+            Dictionary<int, Direction> moves = new Dictionary<int, Direction>();
 
             if (filename != null && filename != String.Empty)
             {
@@ -132,9 +170,13 @@ namespace OGP.Client
                 {
                     while (!reader.EndOfStream)
                     {
-                        var line = reader.ReadLine();
-                        var values = line.Split(',');
-                        moves.Add(values[1]);
+                        var values = reader.ReadLine().Split(',');
+
+                        Direction direction = (Direction)Enum.Parse(typeof(Direction), values[1], true);
+                        if (Enum.IsDefined(typeof(Direction), direction))
+                        {
+                            moves.Add(Int32.Parse(values[0]), direction);
+                        }
                     }
                 }
             }
