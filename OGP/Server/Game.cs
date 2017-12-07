@@ -7,7 +7,7 @@ namespace OGP.Server
     {
         bool GameOver { get; set; }
 
-        void Init(List<string> clientsEndpoints,int numOfCoins);
+        void InitElements(int numOfCoins);
 
         void MoveLeft(string playerId);
 
@@ -17,7 +17,7 @@ namespace OGP.Server
 
         void MoveDown(string playerId);
 
-        void RegisterClient(string endpoint, int x, int y);
+        void RegisterPlayer(string endpoint, int x, int y);
     }
 
     public interface IGameService
@@ -42,19 +42,19 @@ namespace OGP.Server
 
     public class Game : MarshalByRefObject, IGame
     {
-        private List<GameClient> gameClients;
         private int tickDuration;
         private int minimumPlayers = 1;
         private int gameID;
         private bool gameOver;
         private GameState gameState;
+        private List<Player> players;
 
-        public List<GameClient> GameClients { get => gameClients; set => gameClients = value; }
         public int TickDuration { get => tickDuration; set => tickDuration = value; }
         public int MinimumPlayers { get; set; }
         public int GameID { get => gameID; set => gameID = value; }
         public bool GameOver { get => gameOver; set => gameOver = value; }
         public GameState GameState { get => gameState; set => gameState = value; }
+        public List<Player> Players { get => players; set => players = value; }
 
         public Game()
         {
@@ -67,31 +67,26 @@ namespace OGP.Server
             this.tickDuration = tickDuration;
             this.minimumPlayers = minimumPlayers;
             this.gameID = gameID;
-            this.gameClients = new List<GameClient>();
+            this.players = new List<Player>();
         }
 
-        public void Init(List<string> clientsEndpoints, int numOfCoins)
+        public void InitElements(int numOfCoins)
         {
             if(gameState != null)
             {
-                int i = 1;
-                foreach (var endpoint in clientsEndpoints)
-                {
-                    RegisterClient(endpoint, 8, i * 40);
-                    i++;
-                }
-
-                List<Player> gamePlayers = new List<Player>(); 
-                foreach(GameClient gameClient in GameClients)
-                {
-                    Console.WriteLine("player X" + gameClient.Player.X);
-                    gamePlayers.Add(gameClient.Player);
-                }
-
-                gameState.Players = gamePlayers;
                 gameState.Walls = CreateWalls();
                 gameState.Coins = CreateCoins(numOfCoins);
                 gameState.Ghosts = CreateGhosts();
+                
+            }
+        }
+
+        public void InitPlayers(List<string> clientsEndpoints)
+        {
+            if (gameState != null)
+            {
+                Console.Write("Init Players at " + DateTimeOffset.Now.ToUnixTimeMilliseconds());
+                gameState.Players = CreatePlayers(clientsEndpoints, 8); //x-axis = 8
             }
         }
 
@@ -119,10 +114,10 @@ namespace OGP.Server
             gameState.MovePlayerRight(ref p);
         }
 
-        public void RegisterClient(string endpoint, int x, int y)
+        public void RegisterPlayer(string endpoint, int x, int y)
         {
-            this.GameClients.Add(new GameClient(endpoint, new Player { X= x, Y=  y, PlayerId = endpoint, Score = 0, Alive = true }));
-            Console.WriteLine("Added new client at: " + endpoint);
+            Console.WriteLine("Added new Player at: " + endpoint);
+            this.players.Add(new Player { X= x, Y=  y, PlayerId = endpoint, Score = 0, Alive = true });
         }
 
         public override object InitializeLifetimeService()
@@ -225,5 +220,18 @@ namespace OGP.Server
             }
             return coins;
         }
+
+        internal List<Player> CreatePlayers(List<string> clientsEndpoints, int x)
+        {
+            List<Player> players = new List<Player>();
+            int i = 1;
+            foreach (var endpoint in clientsEndpoints)
+            {
+                RegisterPlayer(endpoint, x, i * 40);
+                i++;
+            }
+            return players;
+        }
+
     }
 }

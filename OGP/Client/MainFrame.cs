@@ -66,23 +66,7 @@ namespace OGP.Client
         private string CHAT_MANAGER = "/ChatManager";
         private string GAME_STATE_PROXY = "/GameStateProxy";
         private Object lockRoundId = new Object();
-        //public delegate GameStateView GameStateDelegate(Form f);
-        //public delegate void FormUpdateDelegate(GameStateView gameState);
 
-        //public void CallBack(IAsyncResult asyncResult)
-        //{
-
-        //    GameStateView gameView = gameState.GetGameState();
-        //    try
-        //    {
-        //        GameStateDelegate stateDelegate = (GameStateDelegate)((AsyncResult)asyncResult).AsyncDelegate;
-        //        gameView = (GameStateView) stateDelegate.EndInvoke(asyncResult);
-        //    }
-        //    catch (Exception)
-        //    {
-        //    }
-        //    this.Invoke(new FormUpdateDelegate(this.UpdateScreen), new object[] { gameView });
-        //}
         internal MainFrame(ArgsOptions args)
         {
             InitializeComponent();
@@ -96,9 +80,8 @@ namespace OGP.Client
             ChannelServices.RegisterChannel(channel, true);
 
             ChatHandler chatHandler = new ChatHandler();
-            chatHandler.SetOutManager(outManager);
-
             StateHandler stateHandler = new StateHandler();
+            chatHandler.SetOutManager(outManager);
             stateHandler.SetOutManager(outManager);
 
             inManager = new InManager(args.ClientUrl, null, chatHandler, stateHandler, false);
@@ -108,19 +91,25 @@ namespace OGP.Client
             chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), masterServer + CHAT_MANAGER);
             chatManager.RegisterClient(clientHostName);
 
+            Thread waitChat = new Thread(() => WaitForClientsToStart(chatClient, chatManager));
+            waitChat.Start();
+
             moves = GetMoves(args.TraceFile);
-            gameProxy = (GameStateProxy) Activator.GetObject(typeof(GameStateProxy), masterServer + GAME_STATE_PROXY);
+            gameProxy = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), masterServer + GAME_STATE_PROXY);
 
             gameView = gameProxy.GetGameState();
-            DisplayWalls(gameView);
-            DisplayGhosts(gameView);
-            DisplayCoins(gameView);
 
-            this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 40, 49);
-            this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
+            Display();
 
-            Thread t = new Thread(() => { WaitForClientsToStart(chatClient, chatManager); Play(this.player, args.TickDuration, args.TraceFile, moves); });
-            t.Start();
+            Console.WriteLine("Started Game at " + DateTimeOffset.Now.ToUnixTimeMilliseconds());
+
+            //this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 40, 49);
+            //this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
+
+
+            Thread waitPlay = new Thread(() => { Play(args.TickDuration, args.TraceFile, moves); });
+            waitPlay.Start();
+
             label2.Visible = true;
 
             //TODO: each client should have a drawn form containing coins, ghosts and walls but game should be paused
@@ -129,17 +118,22 @@ namespace OGP.Client
 
         }
 
+        private void UpdateGameView()
+        {
+            Console.WriteLine("Still looking to update GameStateView....");
+
+            while (gameView.Players.Count == 0)
+            {
+                Console.Write(".");
+                Thread.Sleep(500);
+                gameView = gameProxy.GetGameState();
+                Console.WriteLine("player count" + gameView.Players.Count);
+            }
+        }
+
         private delegate void SetText(string text);
 
-        //private MoveElement(Control s)
-        //{
-        //    gameView = gameState.GetGameState();
-        //    DisplayWalls(gameView);
-        //    DisplayGhosts(gameView);
-        //    DisplayCoins(gameView);
-        //}
-
-        private void Play(PictureBox image, int tick, string filename, List<string> moves)
+        private void Play(int tick, string filename, List<string> moves)
         {
             Console.WriteLine("Game about to start...");
             while (!gameProxy.GameStarted)
@@ -147,6 +141,9 @@ namespace OGP.Client
                 Thread.Sleep(1000);
                 Console.Write(".");
             }
+
+            DisplayPlayers();
+            PictureBox player = playersArray[0];
 
             int roundId = 0;
             int finalRound = moves.Count - 1;
@@ -163,30 +160,30 @@ namespace OGP.Client
                     Args = moves[roundId]
                 }, "master");
 
-                MovePacMan(image, moves[roundId]);
+                MovePacMan(player, moves[roundId]);
                 
                 //coinsArray[1].SetPropertyThreadSafe(() => coinsArray[1].Left, coinsArray[1].Left = coinsArray[1].Left + speed);
                 //coinsArray[3].SetPropertyThreadSafe(() => coinsArray[1].Left, coinsArray[1].Left + speed);
 
                 if (goleftNew)
                 {
-                    if (image.Left > (boardLeft))
-                        image.Left -= speed;
+                    if (player.Left > (boardLeft))
+                        player.Left -= speed;
                 }
                 if (gorightNew)
                 {
-                    if (image.Left < (boardRight))
-                        image.Left += speed;
+                    if (player.Left < (boardRight))
+                        player.Left += speed;
                 }
                 if (goupNew)
                 {
-                    if (image.Top > (boardTop))
-                        image.Top -= speed;
+                    if (player.Top > (boardTop))
+                        player.Top -= speed;
                 }
                 if (godownNew)
                 {
-                    if (image.Top < (boardBottom))
-                        image.Top += speed;
+                    if (player.Top < (boardBottom))
+                        player.Top += speed;
                 }
                 //move ghosts
                 redGhost.Left += ghost1;
@@ -211,7 +208,7 @@ namespace OGP.Client
                     // checking if the player hits the wall or the ghost, then game is over
                     if (x is PictureBox && (string)x.Tag == "wall" || (string)x.Tag == "ghost")
                     {
-                        if (((PictureBox)x).Bounds.IntersectsWith(image.Bounds))
+                        if (((PictureBox)x).Bounds.IntersectsWith(player.Bounds))
                         {
                             //image.Left = 0;
                             //image.Top = 25;
@@ -222,7 +219,7 @@ namespace OGP.Client
                     }
                     if (x is PictureBox && (string)x.Tag == "coin")
                     {
-                        if (((PictureBox)x).Bounds.IntersectsWith(image.Bounds))
+                        if (((PictureBox)x).Bounds.IntersectsWith(player.Bounds))
                         {
                             this.Controls.Remove(x);
                             score++;
@@ -490,7 +487,8 @@ namespace OGP.Client
         }
 
         private PictureBox[] coinsArray;
-        private PictureBox[] wallsArray = Enumerable.Repeat(0, 4).Select(w => new PictureBox()).ToArray();
+        private PictureBox[] wallsArray;
+        private PictureBox[] playersArray;
 
         private void DisplayGhosts(GameStateView gameView)
         {
@@ -548,6 +546,7 @@ namespace OGP.Client
             return coin;
         }
 
+
         /// <summary>
         /// Method used to draw a ghost give a name, resource and x,y
         /// </summary>
@@ -576,6 +575,27 @@ namespace OGP.Client
             ((ISupportInitialize)(element)).BeginInit();
             this.Controls.Add(element);
             ((ISupportInitialize)(element)).EndInit();
+        }
+
+        private void Display()
+        {
+            DisplayWalls(gameView);
+            DisplayGhosts(gameView);
+            DisplayCoins(gameView);
+        }
+
+        private void DisplayPlayers()
+        {
+            UpdateGameView();
+
+            int numberOfPlayers = gameView.Players.Count;
+            playersArray = Enumerable.Repeat(0, numberOfPlayers).Select(c => new PictureBox()).ToArray();
+            int i = 0;
+            foreach (GamePlayer player in gameView.Players)
+            {
+                playersArray[i] = DrawElement(player.PlayerId, "pacman", global::OGP.Client.Properties.Resources.Left, player.X, player.Y);
+                i++;
+            }
         }
 
         private void DisplayWalls(GameStateView gameView)
@@ -632,7 +652,5 @@ namespace OGP.Client
             this.tbChat.SelectionStart = this.tbChat.Text.Length;
             this.tbChat.ScrollToCaret();
         }
-        
     }
-
 }

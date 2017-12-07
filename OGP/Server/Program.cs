@@ -43,8 +43,11 @@ namespace OGP.Server
                 chatManager = new ChatManager();
                 RemotingServices.Marshal(chatManager, "ChatManager");
 
-                Thread waitClients = new Thread(() => { StartGame(argsOptions); WaitForPlayers(argsOptions); });
+                Thread waitClients = new Thread(() => WaitForPlayers(argsOptions));
                 waitClients.Start();
+
+                Thread waitPlayers = new Thread(() => StartGame(argsOptions));
+                waitPlayers.Start();
 
                 //// Load requested games
                 //List<string> supportedGames = new List<string>();
@@ -94,32 +97,35 @@ namespace OGP.Server
                 Thread.Sleep(500);
                 Console.Write(".");
             }
+            chatManager.GameStarted = true;
 
             // TODO: start game here (in a new thread, so that process does not die)
         }
 
         private static void StartGame(ArgsOptions argsOptions)
         {
-
-            //while (chatManager.GameStarted)
-            //{
-            //    Thread.Sleep(500);
-            //    Console.Write(".");
-            //}
-
-            Console.WriteLine("\n Game started!");
-
             game = new Game(gameState, argsOptions.TickDuration, argsOptions.NumPlayers, new Random().Next(1, 23));
-            game.Init(chatManager.ClientsEndpoints, 41);
 
             gameProxy = new GameStateProxy(gameState);
+            game.InitElements(41);
+
             RemotingServices.Marshal(gameProxy, "GameStateProxy");
-            
+
+            //RemotingConfiguration.RegisterWellKnownServiceType(typeof(GameStateProxy),
+            //"GameStateProxy", WellKnownObjectMode.Singleton);
+
+            while (!chatManager.GameStarted)
+            {
+                Thread.Sleep(500);
+                Console.Write(".");
+            }
+
             Thread notifyState = new Thread(() => { SetupCommunication(game, argsOptions); NotifyState(argsOptions); });
             notifyState.Start();
 
+            game.InitPlayers(chatManager.ClientsEndpoints);
+            Console.WriteLine("\n Game started!");
             Thread.Sleep(1000);
-            chatManager.GameStarted = true;
             gameProxy.GameStarted = true;
         }
 
