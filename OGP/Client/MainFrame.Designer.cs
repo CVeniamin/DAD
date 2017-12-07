@@ -40,15 +40,21 @@ namespace OGP.Client
             this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+
             //this.timer1 = new System.Windows.Forms.Timer(this.components);
             //this.pacman = new System.Windows.Forms.PictureBox();
+
             this.tbMsg = new System.Windows.Forms.TextBox();
             this.tbChat = new System.Windows.Forms.TextBox();
+
             //((System.ComponentModel.ISupportInitialize)(this.pacman)).BeginInit();
+
             this.SuspendLayout();
+
             // 
             // label1
             // 
+
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(4, 4);

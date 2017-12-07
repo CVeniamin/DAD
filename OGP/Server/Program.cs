@@ -50,7 +50,7 @@ namespace OGP.Server
             stateHandler.SetOutManager(outManager);
 
             // Create InManager - Remoting endpoint is made available here
-            InManager inManager = new InManager(argsOptions.ServerUrl, actionHandler, null, stateHandler, true);
+            InManager inManager = new InManager(argsOptions.ServerUrl, actionHandler, null, stateHandler);
 
             // Begin server Timer
             new Thread(() => {
@@ -65,6 +65,8 @@ namespace OGP.Server
                         Thread.Sleep(argsOptions.TickDuration);
                     }
                     catch (ThreadInterruptedException) { }
+
+                    tickId++;
                 }
             }).Start();
                 

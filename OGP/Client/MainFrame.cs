@@ -7,12 +7,6 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting.Channels.Tcp;
-using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -49,119 +43,50 @@ namespace OGP.Client
         private int ghost3x = 5;
         private int ghost3y = 5;
         private List<string> moves;
-        
+
         private PictureBox player;
         private PictureBox pacman;
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
 
-        private IChatManager chatManager;
-        private ChatClient chatClient;
-        private GameStateProxy gameProxy;
-        private GameStateView gameView;
+        private GameStateView gameStateView;
 
-        private OutManager outManager;
-        private InManager inManager;
-        private string CHAT_MANAGER = "/ChatManager";
-        private string GAME_STATE_PROXY = "/GameStateProxy";
         private Object lockRoundId = new Object();
 
-        internal MainFrame(ArgsOptions args)
+        private string Pid;
+        private OutManager outManager;
+
+        internal MainFrame(string Pid, OutManager outManager)
         {
             InitializeComponent();
 
-            Uri clientUri = new Uri(args.ClientUrl);
-            string clientHostName = GetHostName(clientUri);
-            outManager = new OutManager(args.ClientUrl, (List<string>)args.ServerEndpoints);
-            string masterServer = GetHostName(outManager.GetMasterServer());
+            this.Pid = Pid;
+            this.outManager = outManager;
 
-            TcpChannel channel = new TcpChannel(clientUri.Port);
-            ChannelServices.RegisterChannel(channel, true);
-
-            ChatHandler chatHandler = new ChatHandler();
-            StateHandler stateHandler = new StateHandler();
-            chatHandler.SetOutManager(outManager);
-            stateHandler.SetOutManager(outManager);
-
-            inManager = new InManager(args.ClientUrl, null, chatHandler, stateHandler, false);
-            chatClient = new ChatClient(this, args.Pid, clientHostName);
-            RemotingServices.Marshal(chatClient, "ChatClient");
-            
-            chatManager = (IChatManager)Activator.GetObject(typeof(IChatManager), masterServer + CHAT_MANAGER);
-            chatManager.RegisterClient(clientHostName);
-
-            Thread waitChat = new Thread(() => WaitForClientsToStart(chatClient, chatManager));
-            waitChat.Start();
-
-            moves = GetMoves(args.TraceFile);
-            gameProxy = (GameStateProxy)Activator.GetObject(typeof(GameStateProxy), masterServer + GAME_STATE_PROXY);
-
-            gameView = gameProxy.GetGameState();
-
-            Display();
-
-            Console.WriteLine("Started Game at " + DateTimeOffset.Now.ToUnixTimeMilliseconds());
-
-            //this.pacman = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 40, 49);
-            //this.player = DrawElement("pacman", "pacman", global::OGP.Client.Properties.Resources.Left, 11, 90);
-
-
-            Thread waitPlay = new Thread(() => { Play(args.TickDuration, args.TraceFile, moves); });
-            waitPlay.Start();
+            new Thread(() => { Play(); }).Start();
 
             label2.Visible = true;
-
-            //TODO: each client should have a drawn form containing coins, ghosts and walls but game should be paused
-            //it's only started after server notifities with game.GameStarted = true;
-            //we should keep waiting until that flag is setted
-
+            label2.Text = "Waiting for players...";
         }
 
-        private void UpdateGameView()
+        private void Play()
         {
-            Console.WriteLine("Still looking to update GameStateView....");
-
-            while (gameView.Players.Count == 0)
-            {
-                Console.Write(".");
-                Thread.Sleep(500);
-                gameView = gameProxy.GetGameState();
-                Console.WriteLine("player count" + gameView.Players.Count);
-            }
-        }
-
-        private delegate void SetText(string text);
-
-        private void Play(int tick, string filename, List<string> moves)
-        {
-            Console.WriteLine("Game about to start...");
-            while (!gameProxy.GameStarted)
-            {
-                Thread.Sleep(1000);
-                Console.Write(".");
-            }
-
-            DisplayPlayers();
+            DisplayPlayers(gameStateView);
             PictureBox player = playersArray[0];
 
+            int tick = 20;
+            List<string> moves = new List<string>();
             int roundId = 0;
-            int finalRound = moves.Count - 1;
 
-            while (roundId <= finalRound)
+            while (roundId < moves.Count)
             {
-                Console.WriteLine(coinsArray.Length);
+
                 label2.SetPropertyThreadSafe(() => label2.Text, moves[roundId]);
                 label1.Text = "Score: " + score;
-                
-                outManager.SendCommand(new Command
-                {
-                    Type = Server.CommandType.Action,
-                    Args = moves[roundId]
-                }, "master");
 
                 MovePacMan(player, moves[roundId]);
-                
+
                 //coinsArray[1].SetPropertyThreadSafe(() => coinsArray[1].Left, coinsArray[1].Left = coinsArray[1].Left + speed);
                 //coinsArray[3].SetPropertyThreadSafe(() => coinsArray[1].Left, coinsArray[1].Left + speed);
 
@@ -251,7 +176,7 @@ namespace OGP.Client
                 {
                     ghost3y = -ghost3y;
                 }
-                
+
                 Thread.Sleep(tick);
 
                 lock (lockRoundId)
@@ -259,49 +184,6 @@ namespace OGP.Client
                     roundId++;
                 }
             }
-        }
-
-        private List<string> GetMoves(string filename)
-        {
-            List<string> moves = new List<string>();
-
-            if (filename != null && filename != String.Empty)
-            {
-                using (var reader = new StreamReader(filename))
-                {
-                    while (!reader.EndOfStream)
-                    {
-                        var line = reader.ReadLine();
-                        var values = line.Split(',');
-                        moves.Add(values[1]);
-                    }
-                }
-            }
-
-            return moves;
-        }
-
-        public static string GetHostName(Uri uri)
-        {
-            return uri.ToString().Replace(uri.PathAndQuery, "");
-        }
-
-        public void WaitForClientsToStart(IChatClient chat, IChatManager manager)
-        {
-            while (!manager.GameStarted)
-            {
-                Thread.Sleep(1000);
-            }
-
-            label2.Text = "Started";
-
-            if (chat != null && manager != null)
-            {
-                //each client receives a list containing all other clients
-                chat.ClientsEndpoints = manager.GetClients();
-                chat.ActivateClients();
-            }
-
         }
 
         private void MovePacMan(PictureBox player, string move)
@@ -327,29 +209,44 @@ namespace OGP.Client
             }
         }
 
+        private void SendDirection(Direction direction)
+        {
+            if (direction != lastSentDirection)
+            {
+                outManager.SendCommand(new Command
+                {
+                    Type = Server.CommandType.Action,
+                    Args = new GameMovement
+                    {
+                        Direction = direction
+                    }
+                }, OutManager.MASTER_SERVER);
+            }
+        }
+
         private void keyisdown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Left)
             {
-                //TODO: send to server moveLeft
+                SendDirection(Direction.LEFT);
                 goleft = true;
                 pacman.Image = Properties.Resources.Left;
             }
             if (e.KeyCode == Keys.Right)
             {
-                //TODO: send to server moveRight
+                SendDirection(Direction.RIGHT);
                 goright = true;
                 pacman.Image = Properties.Resources.Right;
             }
             if (e.KeyCode == Keys.Up)
             {
-                //TODO: send to server moveUP
+                SendDirection(Direction.UP);
                 goup = true;
                 pacman.Image = Properties.Resources.Up;
             }
             if (e.KeyCode == Keys.Down)
             {
-                //TODO: send to server moveDown
+                SendDirection(Direction.DOWN);
                 godown = true;
                 pacman.Image = Properties.Resources.down;
             }
@@ -361,21 +258,13 @@ namespace OGP.Client
 
         private void keyisup(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Left)
+            if (
+                (e.KeyCode == Keys.Left && lastSentDirection == Direction.RIGHT) ||
+                (e.KeyCode == Keys.Right && lastSentDirection == Direction.LEFT) ||
+                (e.KeyCode == Keys.Up && lastSentDirection == Direction.DOWN) ||
+                (e.KeyCode == Keys.Down && lastSentDirection == Direction.UP))
             {
-                goleft = false;
-            }
-            if (e.KeyCode == Keys.Right)
-            {
-                goright = false;
-            }
-            if (e.KeyCode == Keys.Up)
-            {
-                goup = false;
-            }
-            if (e.KeyCode == Keys.Down)
-            {
-                godown = false;
+                SendDirection(Direction.NONE);
             }
         }
 
@@ -475,83 +364,28 @@ namespace OGP.Client
         {
             if (e.KeyCode == Keys.Enter)
             {
-                chatClient.SendMsg(tbMsg.Text);
+                outManager.SendCommand(new Command
+                {
+                    Type = Server.CommandType.Chat,
+                    Args = new ChatMessage
+                    {
+                        Sender = Pid,
+                        Message = tbMsg.Text
+                    }
+                }, OutManager.CLIENT_BROADCAST);
+
                 tbMsg.Clear();
                 tbMsg.Enabled = false;
                 this.Focus();
             }
         }
 
-        private void redGhost_Click(object sender, EventArgs e)
-        {
-        }
-
         private PictureBox[] coinsArray;
         private PictureBox[] wallsArray;
         private PictureBox[] playersArray;
+        private Direction lastSentDirection;
 
-        private void DisplayGhosts(GameStateView gameView)
-        {
-            this.pinkGhost = new PictureBox();
-            this.yellowGhost = new PictureBox();
-            this.redGhost = new PictureBox();
-
-            foreach (GameGhost g in gameView.Ghosts)
-            {
-                switch (g.GhostColor)
-                {
-                    case GhostColor.Pink:
-                        this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, g.X, g.Y);
-                        break;
-                    case GhostColor.Yellow:
-                        this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, g.X, g.Y);
-                        break;
-                    case GhostColor.Red:
-                        this.redGhost = DrawElement("redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, g.X, g.Y);
-                        break;
-                }
-            }
-        }
-
-        private void DisplayCoins(GameStateView gameView)
-        {
-            int totalCoins = gameView.Coins.Count;
-            this.coinsArray = Enumerable.Repeat(0, totalCoins).Select(c => new PictureBox()).ToArray();
-
-            int tabIndex = 73;
-            int i = 0;
-            foreach (GameCoin c in gameView.Coins)
-            {
-                coinsArray[i] = DrawCoin(tabIndex, c.X, c.Y);
-                i++;
-                tabIndex++;
-            }
-        }
-
-        private PictureBox DrawCoin(int tabIndex, int x, int y)
-        {
-            PictureBox coin = new PictureBox
-            {
-                Image = global::OGP.Client.Properties.Resources.cccc,
-                Location = new Point(x, y),
-                Margin = new Padding(4),
-                Name = "coin",
-                Size = new Size(15, 15),
-                SizeMode = PictureBoxSizeMode.StretchImage,
-                TabIndex = tabIndex,
-                TabStop = false,
-                Tag = "coin"
-            };
-            InitializeDrawing(coin);
-            return coin;
-        }
-
-
-        /// <summary>
-        /// Method used to draw a ghost give a name, resource and x,y
-        /// </summary>
-        ///
-        private PictureBox DrawElement(string ghostname, string tag,  Bitmap resource, int x, int y)
+        private PictureBox DrawElement(string ghostname, string tag, Bitmap resource, int x, int y)
         {
             PictureBox element = new PictureBox
             {
@@ -577,41 +411,74 @@ namespace OGP.Client
             ((ISupportInitialize)(element)).EndInit();
         }
 
-        private void Display()
+        private void Display(GameStateView gameStateView)
         {
-            DisplayWalls(gameView);
-            DisplayGhosts(gameView);
-            DisplayCoins(gameView);
+            DisplayPlayers(gameStateView);
+            DisplayWalls(gameStateView);
+            DisplayGhosts(gameStateView);
+            DisplayCoins(gameStateView);
         }
 
-        private void DisplayPlayers()
+        private void DisplayPlayers(GameStateView gameStateView)
         {
-            UpdateGameView();
-
-            int numberOfPlayers = gameView.Players.Count;
-            playersArray = Enumerable.Repeat(0, numberOfPlayers).Select(c => new PictureBox()).ToArray();
+            playersArray = Enumerable.Repeat(0, gameStateView.Players.Count).Select(c => new PictureBox()).ToArray();
             int i = 0;
-            foreach (GamePlayer player in gameView.Players)
+            foreach (Player player in gameStateView.Players)
             {
                 playersArray[i] = DrawElement(player.PlayerId, "pacman", global::OGP.Client.Properties.Resources.Left, player.X, player.Y);
                 i++;
             }
         }
 
-        private void DisplayWalls(GameStateView gameView)
+        private void DisplayWalls(GameStateView gameStateView)
         {
-            int numberOfWalls = gameView.Walls.Count;
-            this.wallsArray = Enumerable.Repeat(0, numberOfWalls).Select(c => new PictureBox()).ToArray();
+            wallsArray = Enumerable.Repeat(0, gameStateView.Walls.Count).Select(c => new PictureBox()).ToArray();
             int i = 0;
-            foreach (GameWall wall in gameView.Walls)
+            foreach (Wall wall in gameStateView.Walls)
             {
                 wallsArray[i] = DrawWall(wall.X, wall.Y, wall.SizeX, wall.SizeY);
                 i++;
             }
         }
-        /// <summary>
-        /// Method used to draw a wall give a PictureBox, name, x
-        /// </summary>
+
+        private void DisplayGhosts(GameStateView gameStateView)
+        {
+            this.pinkGhost = new PictureBox();
+            this.yellowGhost = new PictureBox();
+            this.redGhost = new PictureBox();
+
+            foreach (Ghost ghost in gameStateView.Ghosts)
+            {
+                switch (ghost.Color)
+                {
+                    case GhostColor.Pink:
+                        this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, ghost.X, ghost.Y);
+                        break;
+                    case GhostColor.Yellow:
+                        this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, ghost.X, ghost.Y);
+                        break;
+                    case GhostColor.Red:
+                        this.redGhost = DrawElement("redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, ghost.X, ghost.Y);
+                        break;
+                }
+            }
+        }
+
+        private void DisplayCoins(GameStateView gameStateView)
+        {
+            coinsArray = Enumerable.Repeat(0, gameStateView.Coins.Count).Select(c => new PictureBox()).ToArray();
+
+            int tabIndex = 73;
+            int i = 0;
+            foreach (Coin c in gameStateView.Coins)
+            {
+                coinsArray[i] = DrawCoin(tabIndex, c.X, c.Y);
+                i++;
+                tabIndex++;
+            }
+        }
+
+
         private PictureBox DrawWall(int x, int y, int sizeX, int sizeY)
         {
             PictureBox wall = new PictureBox
@@ -631,14 +498,29 @@ namespace OGP.Client
             return wall;
         }
 
-        private void MainFrame_Load(object sender, EventArgs e)
+        private PictureBox DrawCoin(int tabIndex, int x, int y)
         {
-            
+            PictureBox coin = new PictureBox
+            {
+                Image = global::OGP.Client.Properties.Resources.cccc,
+                Location = new Point(x, y),
+                Margin = new Padding(4),
+                Name = "coin",
+                Size = new Size(15, 15),
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                TabIndex = tabIndex,
+                TabStop = false,
+                Tag = "coin"
+            };
+            InitializeDrawing(coin);
+            return coin;
         }
 
-        public void AddMsg(string s)
+
+
+        public void AppendMessageToChat(string message)
         {
-            tbChat.Text += "\r\n" + s;
+            tbChat.Text += "\r\n" + message;
         }
 
         private void TbChat_MouseDown(object sender, MouseEventArgs e)
@@ -651,6 +533,10 @@ namespace OGP.Client
         {
             this.tbChat.SelectionStart = this.tbChat.Text.Length;
             this.tbChat.ScrollToCaret();
+        }
+
+        private void MainFrame_Load(object sender, EventArgs e)
+        {
         }
     }
 }

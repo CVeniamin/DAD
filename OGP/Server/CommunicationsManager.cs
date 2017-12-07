@@ -28,7 +28,6 @@ namespace OGP.Server
 
     public class InManager
     {
-        private bool initError = false;
         private bool frozen = false;
 
         private ActionHandler actionHandler;
@@ -37,9 +36,8 @@ namespace OGP.Server
 
         private CommandQueue incomingCommandQueue;
         private Thread handlerThread;
-        private TcpChannel channel;
 
-        public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler, bool server)
+        public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler)
         {
             Uri uri = new Uri(Url);
             
