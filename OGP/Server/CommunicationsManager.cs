@@ -35,29 +35,24 @@ namespace OGP.Server
         private ChatHandler chatHandler;
         private StateHandler stateHandler;
 
-        private CommandQueue commandQueue;
-        private Thread backgroundThread;
+        private CommandQueue incomingCommandQueue;
+        private Thread handlerThread;
         private TcpChannel channel;
 
         public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler, bool server)
         {
             Uri uri = new Uri(Url);
-
-            //if (server)
-            //{
-            //    try
-            //    {
-            //        TcpChannel channel = new TcpChannel(uri.Port);
-            //        ChannelServices.RegisterChannel(channel, true);
-            //    }
-            //    catch (SocketException)
-            //    {
-            //        Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL");
-            //        initError = true;
-            //        return; // Uncomment for client after refractoring
-            //    }
-                
-            //}
+            
+            try
+            {
+                TcpChannel channel = new TcpChannel(uri.Port);
+                ChannelServices.RegisterChannel(channel, true);
+            }
+            catch (SocketException)
+            {
+                Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL"); // TODO: Remove?
+                throw new Exception("Socket not available");
+            }
 
             RemotingEndpoint endpoint = new RemotingEndpoint(this);
             RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
@@ -66,22 +61,22 @@ namespace OGP.Server
             this.chatHandler = chatHandler;
             this.stateHandler = stateHandler;
 
-            this.commandQueue = new CommandQueue();
+            this.incomingCommandQueue = new CommandQueue();
 
-            backgroundThread = new Thread(HandlerThread);
-            backgroundThread.Start();
+            handlerThread = new Thread(ProcessIncomingMessages);
+            handlerThread.Start();
 
             Console.WriteLine("Server Registered at " + Url);
         }
 
-        private void HandlerThread()
+        private void ProcessIncomingMessages()
         {
             while (true)
             {
                 if (!frozen)
                 {
                     Command command;
-                    while ((command = commandQueue.Dequeue()) != null)
+                    while ((command = incomingCommandQueue.Dequeue()) != null)
                     {
                         PassCommandToHandler(command);
 
@@ -101,36 +96,31 @@ namespace OGP.Server
             }
         }
 
-        public bool GotError()
-        {
-            return initError;
-        }
-
         internal void Enqueue(Command command)
         {
-            commandQueue.Enqueue(command);
-            backgroundThread.Interrupt();
+            incomingCommandQueue.Enqueue(command);
+            handlerThread.Interrupt();
         }
 
         public void PassCommandToHandler(Command command)
         {
             switch (command.Type)
             {
-                case Type.Action:
+                case CommandType.Action:
                     if (actionHandler != null)
                     {
                         actionHandler.Process(command.Sender, command.Args);
                     }
                     break;
 
-                case Type.Chat:
+                case CommandType.Chat:
                     if (chatHandler != null)
                     {
                         chatHandler.Process(command.Sender, command.Args);
                     }
                     break;
 
-                case Type.State:
+                case CommandType.State:
                     if (stateHandler != null) {
                         stateHandler.Process(command.Sender, command.Args);
                     }
@@ -146,17 +136,17 @@ namespace OGP.Server
         internal void Unfreeze()
         {
             frozen = false;
-            backgroundThread.Interrupt();
+            handlerThread.Interrupt();
         }
     }
 
-    public enum Type
+    public enum CommandType
     { Action, Chat, State };
 
     [Serializable]
     public class Command
     {
-        public Type Type { get; set; }
+        public CommandType Type { get; set; }
         public object Args { get; set; }
         internal string Sender { get; set; }
         internal long InsertedTime { get; set; }
@@ -165,6 +155,7 @@ namespace OGP.Server
     public class OutManager
     {
         public const string MASTER_SERVER = "master";
+        public const string CLIENT_BROADCAST = "cbcast";
 
         private Dictionary<string, CommandQueue> outQueues;
         private HashSet<CommandQueue> activeQueues;
@@ -174,14 +165,10 @@ namespace OGP.Server
         private string masterServer;
         private string selfUrl;
 
-        private Thread backgroundThread;
-
-
-        public Uri GetMasterServer()
-        {
-            return new Uri(masterServer);
-        }
-        public OutManager(string selfUrl, List<string> serverList)
+        private GameState gameState;
+        private Thread dispatchThread;
+        
+        public OutManager(string selfUrl, List<string> serverList, GameState gameState)
         {
             if (serverList.Count == 0)
             {
@@ -192,13 +179,15 @@ namespace OGP.Server
             this.activeQueues = new HashSet<CommandQueue>();
             this.endpointPool = new EndpointPool();
 
+            this.gameState = gameState;
+
             this.serverList = serverList;
             masterServer = serverList[0];
 
             this.selfUrl = selfUrl;
 
-            backgroundThread = new Thread(SenderThread);
-            backgroundThread.Start();
+            dispatchThread = new Thread(ProcessOutgoingCommands);
+            dispatchThread.Start();
         }
 
         public bool SendCommand(Command command, string destination)
@@ -209,10 +198,14 @@ namespace OGP.Server
             {
                 Url = this.masterServer;
             }
-            /*else if (!destination.StartsWith("tcp://"))
+            else if (destination == CLIENT_BROADCAST)
             {
-                Url = this.endpointPool.ResolveName(destination);
-            }*/
+                foreach (Player player in gameState.Players)
+                {
+                    SendCommand(command, player.Url);
+                }
+                return true;
+            }
 
             // Fallback to passed destination
             if (Url == null || Url.Length == 0)
@@ -236,7 +229,7 @@ namespace OGP.Server
             commandQueue.Enqueue(command);
             activeQueues.Add(commandQueue);
 
-            backgroundThread.Interrupt();
+            dispatchThread.Interrupt();
 
             return true;
         }
@@ -259,35 +252,14 @@ namespace OGP.Server
             }
         }
 
-        private void SenderThread()
+        private void ProcessOutgoingCommands()
         {
             while (true)
             {
                 foreach (CommandQueue commandQueue in activeQueues)
                 {
                     string Url = outQueues.FirstOrDefault(x => x.Value == commandQueue).Key;
-                    new Thread(() =>
-                    {
-                        Command command = commandQueue.Dequeue();
-                        if (command != null)
-                        {
-                            command.Sender = this.selfUrl;
-                            RemotingEndpoint endpoint = endpointPool.GetByUrl(Url);
-
-                            try
-                            {
-                                endpoint.Request(command);
-                            }
-                            catch (Exception ex)
-                            {
-                                if (ex is IOException || ex is SocketException)
-                                {
-                                    ReportOffline(Url);
-                                }
-                            }
-                            
-                        }
-                    }).Start();
+                    new Thread(() => EmitOutgoingCommands(commandQueue, Url)).Start();
                 }
                 activeQueues.Clear();
 
@@ -300,6 +272,29 @@ namespace OGP.Server
             }
         }
 
+        private void EmitOutgoingCommands(CommandQueue commandQueue, string Url)
+        {
+            Command command = commandQueue.Dequeue();
+            if (command != null)
+            {
+                command.Sender = this.selfUrl;
+                RemotingEndpoint endpoint = endpointPool.GetByUrl(Url);
+
+                try
+                {
+                    endpoint.Request(command);
+                }
+                catch (Exception ex)
+                {
+                    if (ex is IOException || ex is SocketException)
+                    {
+                        ReportOffline(Url);
+                    }
+                }
+
+            }
+        }
+
         private void ReportOffline(string Url)
         {
             if (Url.Equals(masterServer))
@@ -308,14 +303,23 @@ namespace OGP.Server
             }
             else
             {
-                // Remove clients if clients
+                // Remove client(s) and server(s) at that Url from local state
+                gameState.Players.RemoveAll(player => player.Url == Url);
+                gameState.Servers.RemoveAll(server => server.Url == Url);
             }
         }
 
         private void FallbackToSlave()
         {
-            this.serverList.Sort();
-            masterServer = serverList[0];
+            //while (gameState.Servers.Count > 0)
+            //{
+                //Server server = gameState.Servers[0];
+                
+            //}
+            
+            // if (server.Url == )
+            // this.serverList.Sort();
+            // masterServer = serverList[0];
         }
     }
 

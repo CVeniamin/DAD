@@ -1,244 +1,214 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
-using static OGP.Server.ActionHandler;
 
 namespace OGP.Server
 {
-    public class GameStateProxy : MarshalByRefObject
-    {
-        private GameState gameState;
-        private bool gameStarted;
-
-        public bool GameStarted { get => gameStarted; set => gameStarted = value; }
-
-        public GameStateProxy(GameState gameState)
-        {
-            this.gameStarted = false;
-            this.gameState = gameState;
-        }
-
-        public GameStateView GetGameState()
-        {
-            return gameState.GetGameState();
-        }
-
-        public override object InitializeLifetimeService()
-        {
-            return null;
-        }
-    }
-
     [Serializable]
     public class GameStateView
     {
-        private List<GamePlayer> players;
-        private List<GameGhost> ghosts;
-        private List<GameCoin> coins;
-        private List<GameWall> walls;
-        private List<GameServer> servers;
-
-        private bool gameOver;
-
-        public bool GameOver { get => gameOver; set => gameOver = value; }
-
-        public List<GamePlayer> Players { get => players; set => players = value; }
-        public List<GameGhost> Ghosts { get => ghosts; set => ghosts = value; }
-        public List<GameCoin> Coins { get => coins; set => coins = value; }
-        public List<GameWall> Walls { get => walls; set => walls = value; }
-        public List<GameServer> Servers { get => servers; set => servers = value; }
-
-        public GameStateView()
-        {
-            players = new List<GamePlayer>();
-            ghosts = new List<GameGhost>();
-            coins = new List<GameCoin>();
-            walls = new List<GameWall>();
-            servers = new List<GameServer>();
-        }
-
-        internal void AddPlayer(GamePlayer gamePlayer)
-        {
-            players.Add(gamePlayer);
-        }
-
-        internal void AddGhost(GameGhost gameGhost)
-        {
-            ghosts.Add(gameGhost);
-        }
-
-        internal void AddCoin(GameCoin gameCoin)
-        {
-            coins.Add(gameCoin);
-        }
-
-        internal void AddWall(GameWall gameWall)
-        {
-            walls.Add(gameWall);
-        }
-
-        internal void AddServer(GameServer gameServer)
-        {
-            servers.Add(gameServer);
-        }
+        public List<Player> Players;
+        public List<Ghost> Ghosts;
+        public List<Coin> Coins;
+        public List<Wall> Walls;
+        public List<Server> Servers;
+        private bool GameOver;
     }
 
     public class GameState
     {
         private GameStateView cachedGameStateView = null;
 
-        private List<Player> players;
-        private List<Ghost> ghosts;
-        private List<Coin> coins;
-        private List<Wall> walls;
-        private List<Server> servers;
+        public List<Player> Players { get; private set; }
+        public List<Ghost> Ghosts { get; private set; }
+        public List<Coin> Coins { get; private set; }
+        public List<Wall> Walls { get; private set; }
+        public List<Server> Servers { get; private set; }
 
         private bool gameStarted;
         private bool gameOver;
-
         public bool GameStarted { get => gameStarted; set => gameStarted = value; }
         public bool GameOver { get => gameOver; set => gameOver = value; }
-
-        public GameState()
+        
+        public GameState(List<string> existsingServersList)
         {
             this.GameStarted = false;
-            players = new List<Player>();
-            ghosts = new List<Ghost>();
-            coins = new List<Coin>();
-            walls = new List<Wall>();
-            servers = new List<Server>();
+
+            Players = new List<Player>();
+
+            InitGhosts();
+            InitCoins();
+            InitWalls();
+
+            LoadServers(existsingServersList);
         }
 
-        public List<Player> Players { get => players; set => players = value; }
-        public List<Ghost> Ghosts { get => ghosts; set => ghosts = value; }
-        public List<Coin> Coins { get => coins; set => coins = value; }
-        public List<Wall> Walls { get => walls; set => walls = value; }
-        public List<Server> Servers { get => servers; set => servers = value; }
-
-
-        internal GameStateView GetGameState()
+        private void InitGhosts()
         {
-            if (cachedGameStateView == null && GenerateGameStateView())
+            Ghosts = new List<Ghost>();
+
+            Ghost pink = new Ghost
             {
+                X = 200,
+                Y = 50,
+                Color = GhostColor.Pink
+            };
+
+            Ghost yellow = new Ghost
+            {
+                X = 200,
+                Y = 235,
+                Color = GhostColor.Yellow
+            };
+
+            Ghost red = new Ghost
+            {
+                X = 240,
+                Y = 90,
+                Color = GhostColor.Red
+            };
+
+            Ghosts.Add(pink);
+            Ghosts.Add(yellow);
+            Ghosts.Add(red);
+        }
+
+        private void InitCoins()
+        {
+            Coins = new List<Coin>();
+
+            short totalCoins = 41;
+
+            short columnX = 1;
+            short x = 15;
+            short y = 45;
+
+            for (var i = 1; i <= totalCoins; i++)
+            {
+                if (columnX == 7)
+                {
+                    x = 15;
+                    y += 45;
+                    columnX = 1;
+                }
+
+                Coin c = new Coin
+                {
+                    X = x,
+                    Y = y,
+                };
+
+                x += 60;
+                columnX++;
+
+                Coins.Add(c);
+            }
+        }
+        
+        private void InitWalls()
+        {
+            Walls = new List<Wall>();
+
+            Wall w1 = new Wall
+            {
+                X = 110,
+                Y = 50,
+                SizeX = 15,
+                SizeY = 80
+            };
+
+            Wall w2 = new Wall
+            {
+                X = 280,
+                Y = 50,
+                SizeX = 20,
+                SizeY = 60
+            };
+
+            Wall w3 = new Wall
+            {
+                X = 110,
+                Y = 245,
+                SizeX = 15,
+                SizeY = 80
+            };
+
+            Wall w4 = new Wall
+            {
+                X = 300,
+                Y = 245,
+                SizeX = 20,
+                SizeY = 60,
+            };
+
+            Walls.Add(w1);
+            Walls.Add(w2);
+            Walls.Add(w3);
+            Walls.Add(w4);
+        }
+
+        internal Player GetPlayerByUrl(string Url)
+        {
+            return Players.Find(player => player.Url == Url);
+        }
+
+        internal GameStateView GetGameStateView()
+        {
+            if (cachedGameStateView == null)
+            {
+                GenerateGameStateView();
                 return cachedGameStateView; // Return newly generated state
             }
 
             return cachedGameStateView; // Return null or cached game state
         }
 
-        private bool GenerateGameStateView()
+        private void GenerateGameStateView()
         {
-            GameStateView gameStateView = new GameStateView();
-
-            foreach (Player player in players)
+            cachedGameStateView = new GameStateView
             {
-                gameStateView.AddPlayer(new GamePlayer(player.X, player.Y, player.PlayerId, player.Score, player.Alive));
-            }
-
-            foreach (Ghost ghost in ghosts)
-            {
-                gameStateView.AddGhost(new GameGhost(ghost.X, ghost.Y, ghost.Type));
-            }
-
-            foreach (Coin coin in coins)
-            {
-                gameStateView.AddCoin(new GameCoin(coin.X, coin.Y));
-            }
-
-            foreach (Wall wall in walls)
-            {
-                gameStateView.AddWall(new GameWall(wall.X, wall.Y, wall.SizeX, wall.SizeY));
-            }
-
-            foreach (Server server in servers)
-            {
-                gameStateView.AddServer(new GameServer(server.Url));
-            }
-            cachedGameStateView = gameStateView;
-
-            return true;
+                Players = Players,
+                Ghosts = Ghosts,
+                Coins = Coins,
+                Walls = Walls,
+                Servers = Servers
+            };
         }
 
-        internal Player GetPlayerByID(string playerId)
+        private void LoadServers(List<string> existsingServersList)
         {
-            foreach (Player p in Players)
+            Servers = new List<Server>();
+
+            foreach (string Url in existsingServersList)
             {
-                if (p.PlayerId == playerId)
+                Servers.Add(new Server
                 {
-                    return p;
-                }
+                    Url = Url
+                });
             }
-            return null;
         }
 
-        internal int MovePlayerUp(string playerId)
+        internal void AddServerIfNotExists(string source)
         {
-            int x = 0;
-            for (int i = 0; i < Players.Count; i++)
+            if (!Servers.Exists(server => server.Url == source))
             {
-                if (Players[i].PlayerId == playerId)
+                Servers.Add(new Server
                 {
-                    x = Players[i].Y;
-                    Players[i].Y++;
-                    break;
-                }
+                    Url = source
+                });
             }
-            return x;
-
         }
 
-
-        internal void MoveGhost(Ghost g, Move direction)
+        internal void AddPlayerIfNotExists(string Url, string Pid)
         {
-            for (int i = 0; i < Ghosts.Count; i++)
+            if (GetPlayerByUrl(Url) == null)
             {
-                if (Ghosts[i].Type == g.Type)
-                {
-                    switch (direction)
-                    {
-                        case Move.UP:
-                            Ghosts[i].Y++;
-                            break;
-                    }
-                    break;
-                }
-            }
-
-        }
-
-        internal void MoveCoin()
-        {
-            for (int i = 0; i < Coins.Count; i++)
-            {
-                if (Coins[i].X == 15)
-                {
-                    Coins[i].Y++;
-                }
-
-                break;
+                Players.Add(new Player { X = 8, Y = (Players.Count + 1) * 40, PlayerId = Pid, Url = Url, Score = 0, Alive = true });
             }
         }
 
-        //internal void MovePlayerUp(ref Player player)
-        //{
-        //    player.Y++;
-        //}
-
-
-        //internal void MovePlayerDown(ref Player player)
-        //{
-        //    player = player.Y--;
-        //}
-
-        internal void MovePlayerLeft(ref Player player)
+        internal void Patch(GameState newGameState)
         {
-            player.X--;
+            // TODO: newGameState
         }
-
-        internal void MovePlayerRight(ref Player player)
-        {
-            player.X++;
-        }
-
     }
 }

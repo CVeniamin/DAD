@@ -4,7 +4,7 @@ using OGP.Middleware;
 
 namespace OGP.Server
 {
-    internal class ChatManager : MarshalByRefObject, IChatManager
+    /*internal class ChatManager : MarshalByRefObject, IChatManager
     {
 
         private List<string> clientsEndpoints;
@@ -34,5 +34,5 @@ namespace OGP.Server
         {
             return ClientsEndpoints;
         }
-    }
+    }*/
 }

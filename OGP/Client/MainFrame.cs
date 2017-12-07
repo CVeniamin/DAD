@@ -156,7 +156,7 @@ namespace OGP.Client
                 
                 outManager.SendCommand(new Command
                 {
-                    Type = Server.Type.Action,
+                    Type = Server.CommandType.Action,
                     Args = moves[roundId]
                 }, "master");
 
@@ -498,15 +498,15 @@ namespace OGP.Client
 
             foreach (GameGhost g in gameView.Ghosts)
             {
-                switch (g.Type)
+                switch (g.GhostColor)
                 {
-                    case GhostType.Pink:
+                    case GhostColor.Pink:
                         this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, g.X, g.Y);
                         break;
-                    case GhostType.Yellow:
+                    case GhostColor.Yellow:
                         this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, g.X, g.Y);
                         break;
-                    case GhostType.Red:
+                    case GhostColor.Red:
                         this.redGhost = DrawElement("redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, g.X, g.Y);
                         break;
                 }

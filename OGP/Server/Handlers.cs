@@ -11,81 +11,97 @@ namespace OGP.Server
 
     public class ActionHandler : IHandler
     {
-        public enum Move
-        { UP, DOWN, LEFT, RIGHT };
-
-        private HashSet<string> stateRequestors;
+        private HashSet<string> stateDispatchDestinations;
         private OutManager outManager;
-        private Game game;
         private GameState gameState;
+        private int numPlayers;
+        
+        private bool gameOn = false;
 
-        public ActionHandler(Game game)
+        public ActionHandler(GameState gameState, int numPlayers)
         {
-            stateRequestors = new HashSet<string>();
-            this.game = game;
-            this.gameState = game.GameState;
-
-            // TODO: set up timer
+            stateDispatchDestinations = new HashSet<string>();
+            this.gameState = gameState;
+            this.numPlayers = numPlayers;
         }
 
-        public void Process(string source, object move)
+        public void Process(string source, object action)
         {
-            //Player player = (Player)o;
-            //Console.WriteLine(player.PlayerId);
-            //switch (player.Move)
-            //{
-            //    case Move.UP:
-            //        game.MoveUp(player.PlayerId);
-            //        break;
-            //    case Move.DOWN:
-            //        game.MoveDown(player.PlayerId);
-            //        break;
-            //    case Move.LEFT:
-            //        game.MoveLeft(player.PlayerId);
-            //        break;
-            //    case Move.RIGHT:
-            //        game.MoveRight(player.PlayerId);
-            //        break;
-            //}
-            Console.WriteLine(source);
-            Console.WriteLine(move);
-            switch (move)
+            if (action is GameMovement movement)
             {
-                case "UP":
-                    gameState.MoveCoin();
-                    int x = gameState.MovePlayerUp(source);
-                    Console.WriteLine("x" + x);
-                    break;
-                //case "DOWN":
-                //    game.MoveDown(source);
-                //    break;
-                //case "LEFT":
-                //    game.MoveLeft(source);
-                //    break;
-                //case "RIGHT":
-                //    game.MoveRight(source);
-                //    break;
+                // Resolve player URL to Player object
+                Player player = gameState.GetPlayerByUrl(source);
+
+                if (player == null)
+                {
+                    Console.WriteLine("Player with {0} URL not found", source);
+                    return;
+                }
+
+                if (!gameOn)
+                {
+                    switch (movement.Direction)
+                    {
+                        case Direction.UP:
+                            player.Y--;
+                            break;
+                        case Direction.DOWN:
+                            player.Y++;
+                            break;
+                        case Direction.LEFT:
+                            player.X--;
+                            break;
+                        case Direction.RIGHT:
+                            player.X++;
+                            break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Movement before game start ignored");
+                }
             }
-            stateRequestors.Add(source);
+            else if (action is ClientSync sync)
+            {
+                // State request from an idle client
+                if (!gameOn && gameState.Players.Count < numPlayers)
+                {
+                    gameState.AddPlayerIfNotExists(source, sync.Pid);
+                }
+            }
+            else
+            {
+                // State request from a slave
+                gameState.AddServerIfNotExists(source);
+            }
+
+            stateDispatchDestinations.Add(source);
         }
 
-        internal void NotifyOfState()
+        internal void FinilizeTick(long tickId)
         {
-            if (this.stateRequestors.Count == 0)
+            // Finish processing the tick, write state to file, etc.
+            DispatchState();
+        }
+
+        private void DispatchState()
+        {
+            if (this.stateDispatchDestinations.Count == 0)
             {
                 return;
             }
 
-            Console.WriteLine("notifying of state to " + this.stateRequestors.Count);
-            foreach (string Url in this.stateRequestors)
+            Console.WriteLine("Notifying {0} recipients of current state", this.stateDispatchDestinations.Count);
+
+            foreach (string Url in this.stateDispatchDestinations)
             {
                 outManager.SendCommand(new Command
                 {
-                    Type = Type.State,
-                    Args = this.game.GameState
+                    Type = CommandType.State,
+                    Args = gameState.GetGameStateView()
                 }, Url);
             }
-            this.stateRequestors.Clear();
+            this.stateDispatchDestinations.Clear();
         }
         
         public void SetOutManager(OutManager outManager)
@@ -96,17 +112,18 @@ namespace OGP.Server
 
     public class ChatHandler : IHandler
     {
-
         private OutManager outManager;
+        private Action<ChatMessage> onChatMessage;
 
-        public ChatHandler()
+        public ChatHandler(Action<ChatMessage> onChatMessage)
         {
-            
+            this.onChatMessage = onChatMessage;
         }
 
         public void Process(string source, object args)
         {
-            // Chat message received
+            // TODO: could do due diligence
+            onChatMessage((ChatMessage)args);
         }
 
         public void SetOutManager(OutManager outManager)
@@ -118,19 +135,16 @@ namespace OGP.Server
     public class StateHandler : IHandler
     {
         private OutManager outManager;
-        //public delegate void StateDelegate(GameStateView view);
+        private GameState gameState;
 
-        public StateHandler()
+        public StateHandler(GameState gameState)
         {
-            
+            this.gameState = gameState;
         }
 
         public void Process(string source, object args)
         {
-            GameState gameState = (GameState) args;
-            Console.WriteLine("Ghosts count: " + gameState.Ghosts.Count);
-            
-            // Received state from other server (master?) check and apply
+            gameState.Patch((GameState)args);
         }
 
         public void SetOutManager(OutManager outManager)
