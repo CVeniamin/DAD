@@ -51,14 +51,15 @@ namespace OGP.PCS
             Console.WriteLine("Starting Server with args: " + args);
             //use this way of starting Server.exe
             Process server = Process.Start("Server.exe", args);
-
+            
             // or use this way
             //Process server = new Process();
-
+            
             //server.StartInfo.FileName = "Server.exe";
             //server.StartInfo.Arguments = args;
             //server.StartInfo.UseShellExecute = false;
             //server.StartInfo.RedirectStandardOutput = true;
+            //server.StartInfo.RedirectStandardInput = true;
             //server.Start();
 
             bool launchSuccess = WaitForProcess(server);
@@ -96,6 +97,7 @@ namespace OGP.PCS
             client.StartInfo.FileName = "Client.exe";
             client.StartInfo.Arguments = args;
             client.StartInfo.UseShellExecute = false;
+            client.StartInfo.RedirectStandardInput = true;
             client.StartInfo.RedirectStandardOutput = true;
             client.Start();
 
@@ -147,6 +149,7 @@ namespace OGP.PCS
                 string line;
                 string output = "";
 
+                // TODO: check if this while returns something since client continuously will sends stuff to console and will never return.
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
                     if (line == String.Empty)
@@ -158,7 +161,6 @@ namespace OGP.PCS
                         output += line + "\n";
                     }
                 }
-
                 return output;
             }
 

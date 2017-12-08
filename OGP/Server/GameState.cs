@@ -1,6 +1,8 @@
 ﻿using OGP.Middleware;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace OGP.Server
 {
@@ -218,6 +220,32 @@ namespace OGP.Server
             Servers = newGameStateView.Servers;
             RoundId = newGameStateView.RoundId;
             GameOver = newGameStateView.GameOver;
+        }
+
+        public String WriteState()
+        {
+            StringBuilder outputString = new StringBuilder();
+            foreach (Ghost ghost in Ghosts)
+            {
+                outputString.Append(String.Format("M, {0} , {1} ", ghost.X, ghost.Y));
+            }
+            foreach (Wall wall in Walls)
+            {
+                outputString.Append(String.Format("W, {0} , {1} ", wall.X, wall.Y));
+            }
+            foreach (Player player in Players)
+            {   
+                string playerInfo = player.Alive ? String.Format("{0}, P,  {2} , {3} ", player.PlayerId, player.X, player.Y) : String.Format("{0}, L,  {1} , {2} ", player.PlayerId, player.X, player.Y);
+                outputString.Append(playerInfo);
+            }
+            foreach (Coin coin in Coins)
+            {
+                if (coin.Visible)
+                {
+                    outputString.Append(String.Format("C, {1} , {2} ", coin.X, coin.Y));
+                }
+            }
+            return outputString.ToString();
         }
     }
 }

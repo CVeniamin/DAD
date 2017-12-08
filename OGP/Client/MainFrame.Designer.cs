@@ -22,9 +22,8 @@ namespace OGP.Client
             base.Dispose(disposing);
         }
 
-        private Label label1;
+        private Label ScoreLabel;
         private Label label2;
-        //private Timer timer1;
 
         private TextBox tbMsg;
         private TextBox tbChat;
@@ -37,63 +36,68 @@ namespace OGP.Client
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
+            this.ScoreLabel = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.tbMsg = new System.Windows.Forms.TextBox();
             this.tbChat = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
-            // label1
+            // ScoreLabel
             // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(3, 3);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(57, 20);
-            this.label1.TabIndex = 71;
-            this.label1.Text = "label1";
+            this.ScoreLabel.AutoSize = true;
+            this.ScoreLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ScoreLabel.Location = new System.Drawing.Point(4, 4);
+            this.ScoreLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.ScoreLabel.Name = "ScoreLabel";
+            this.ScoreLabel.Size = new System.Drawing.Size(155, 25);
+            this.ScoreLabel.TabIndex = 71;
+            this.ScoreLabel.Text = "Player  Score: ";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(178, -1);
+            this.label2.Location = new System.Drawing.Point(237, -1);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(92, 31);
+            this.label2.Size = new System.Drawing.Size(115, 39);
             this.label2.TabIndex = 72;
             this.label2.Text = "label2";
             // 
             // tbMsg
             // 
             this.tbMsg.Enabled = false;
-            this.tbMsg.Location = new System.Drawing.Point(370, 285);
+            this.tbMsg.Location = new System.Drawing.Point(493, 351);
+            this.tbMsg.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.tbMsg.Name = "tbMsg";
-            this.tbMsg.Size = new System.Drawing.Size(100, 20);
+            this.tbMsg.Size = new System.Drawing.Size(132, 22);
             this.tbMsg.TabIndex = 143;
             this.tbMsg.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TbMsg_KeyDown);
             // 
             // tbChat
             // 
             this.tbChat.Enabled = false;
-            this.tbChat.Location = new System.Drawing.Point(370, 25);
+            this.tbChat.Location = new System.Drawing.Point(493, 31);
+            this.tbChat.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.tbChat.Multiline = true;
             this.tbChat.Name = "tbChat";
             this.tbChat.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.tbChat.Size = new System.Drawing.Size(100, 230);
+            this.tbChat.Size = new System.Drawing.Size(132, 282);
             this.tbChat.TabIndex = 144;
             this.tbChat.TextChanged += new System.EventHandler(this.TbChat_TextChanged);
             // 
             // MainFrame
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(505, 328);
+            this.ClientSize = new System.Drawing.Size(673, 404);
             this.Controls.Add(this.tbChat);
             this.Controls.Add(this.tbMsg);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.label1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Controls.Add(this.ScoreLabel);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "MainFrame";
             this.Text = "Pacman";
             this.Load += new System.EventHandler(this.MainFrame_Load);

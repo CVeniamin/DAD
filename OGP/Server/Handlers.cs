@@ -1,6 +1,7 @@
 ﻿using OGP.Middleware;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace OGP.Server
 {
@@ -116,7 +117,7 @@ namespace OGP.Server
 
                 CheckIfGameOver();
 
-                WriteState(); // This should write the game state to file or standard output or something
+                //gameState.WriteState(gameState.RoundId); // This should write the game state to file or standard output or something
             }
 
             DispatchState();
@@ -219,8 +220,6 @@ namespace OGP.Server
                 ghost.X += ghost.DX;
                 ghost.Y += ghost.DY;
 
-                Console.WriteLine("AFTER ghost " + ghost.Color + " ghost X " + ghost.X + " ghost Y " + ghost.Y + " ghost DX" + ghost.DX + " ghost DY " + ghost.DY);
-
                 foreach (Player player in gameState.Players)
                 {
                     if (DetectPlayerGhostCollision(player, ghost))
@@ -283,10 +282,8 @@ namespace OGP.Server
 
         private bool DetectPlayerCoinCollision(Player player, Coin coin)
         {
-            return (player.X < coin.X + ObjectDimensions.COIN_WIDTH
-                        && player.X + ObjectDimensions.PLAYER_WIDTH > coin.X
-                        && player.Y < coin.Y + ObjectDimensions.COIN_HEIGHT
-                        && player.Y + ObjectDimensions.PLAYER_HEIGHT > coin.Y);
+            return (DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
+                                    coin.X, coin.Y, ObjectDimensions.COIN_WIDTH, ObjectDimensions.COIN_HEIGHT));
         }
 
         private bool DetectPlayerGhostCollision(Player player, Ghost ghost)
@@ -350,10 +347,6 @@ namespace OGP.Server
                         && y1 +height1 > y2);
         }
 
-        private void WriteState()
-        {
-            // TODO
-        }
     }
 
     public class ChatHandler : IHandler

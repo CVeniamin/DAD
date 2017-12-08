@@ -53,6 +53,7 @@ namespace OGP.PuppetMaster
                             }
                             else
                             {
+                                // if removed RedirectStandartInput = true from PCS (Process start) will throw an exception
                                 Console.WriteLine("Command execution error.");
                             }
                         }

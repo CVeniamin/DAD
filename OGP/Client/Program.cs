@@ -19,8 +19,6 @@ namespace OGP.Client
 
         private delegate void PrintChatMessage(string msg);
 
-        private delegate void SetTitleLabel(string text); // TODO
-
         private delegate void IngestGameStateView(GameStateView gameStateView);
 
         [STAThread]
@@ -42,7 +40,7 @@ namespace OGP.Client
             if (argsOptions.Pcs == true)
             {
                 Console.WriteLine("Suppressing output");
-                // Console.SetOut(new SuppressedWriter());
+                //Console.SetOut(new SuppressedWriter());
             }
 
             Console.WriteLine("Started Client with PID: " + argsOptions.Pid);
@@ -127,9 +125,10 @@ namespace OGP.Client
                     Console.WriteLine("Exit triggered by input", "CRITICAL");
                     break;
                 }
-
+                Console.WriteLine("input " + input);
                 ICommand cmd = CommandParser.Command.Parse(input);
-                cmd.Exec(gameState);
+                string result = cmd.Exec(gameState);
+                Console.WriteLine(result);
             }
         }
 

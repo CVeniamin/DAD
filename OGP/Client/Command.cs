@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OGP.Server;
+using System;
 
 namespace OGP.Client
 {
@@ -11,6 +12,7 @@ namespace OGP.Client
     {
         public string Exec(object arg0)
         {
+            // TODO 
             return String.Empty;
         }
     }
@@ -26,6 +28,14 @@ namespace OGP.Client
 
         public string Exec(object arg0)
         {
+            // TODO
+            if (arg0 is GameState gameState)
+            {
+                Console.WriteLine("Called Exec on LocalState", "CRITICAL");
+                string output = gameState.WriteState();
+                Console.WriteLine("output " + output, "CRITICAL");
+                return output;
+            }
             return String.Empty;
         }
     }
@@ -36,6 +46,7 @@ namespace OGP.Client
 
         public InjectDelay(string dstPid)
         {
+            // TODO
             this.dstPid = dstPid;
         }
 
@@ -49,6 +60,7 @@ namespace OGP.Client
     {
         public string Exec(object arg0)
         {
+            // TODO
             return String.Empty;
         }
     }
@@ -57,6 +69,7 @@ namespace OGP.Client
     {
         public string Exec(object arg0)
         {
+            // TODO
             return String.Empty;
         }
     }

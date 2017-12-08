@@ -36,6 +36,7 @@ namespace OGP.PuppetMaster
         {
             if (pidToLink.TryGetValue(pid, out string url))
             {
+                Console.WriteLine("Called GetByPid");
                 return GetByUrl(url);
             }
 

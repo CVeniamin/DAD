@@ -74,7 +74,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArgsOptions.cs" />
-    <Compile Include="ChatClient.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="CommandParser.cs" />
     <Compile Include="ControlExtension.cs" />

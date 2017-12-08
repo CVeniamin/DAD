@@ -16,6 +16,7 @@ namespace OGP.Client
         private string Pid;
         private int numPlayers;
         private OutManager outManager;
+        private int score;
 
         private Direction lastSentDirection;
 
@@ -24,43 +25,9 @@ namespace OGP.Client
         private Size playerSize;
 
         private PictureBox[] coinPictureBoxes;
-        private PictureBox[] ghostsArray;
         private PictureBox[] wallPictureBoxes;
         private Dictionary<string, PictureBox> playerPictureBoxes;
         private bool pictureBoxesReady = false;
-
-        // direction player is moving in. Only one will be true
-        private bool goup;
-
-        private bool godown;
-        private bool goleft;
-        private bool goright;
-
-        private bool goupNew;
-        private bool godownNew;
-        private bool goleftNew;
-        private bool gorightNew;
-
-        private int boardRight = 320;
-        private int boardBottom = 320;
-        private int boardLeft = 0;
-        private int boardTop = 40;
-
-        //player speed
-        private int speed = 5;
-
-        private int score = 0; private int total_coins = 61;
-
-        //ghost speed for the one direction ghosts
-        private int ghost1 = 5;
-
-        private int ghost2 = 5;
-
-        //x and y directions for the bi-direccional pink ghost
-        private int ghost3x = 5;
-
-        private int ghost3y = 5;
-        private List<string> moves;
 
         private PictureBox player;
         private PictureBox pacman;
@@ -115,11 +82,25 @@ namespace OGP.Client
 
             playerPictureBoxes = new Dictionary<string, PictureBox>();
 
+            DrawGhosts(); // Draw once
             DrawWalls(gameStateView.Walls); // Draw once
             DrawCoins(gameStateView.Coins); // Draw once
-            DrawGhosts(); // Draw once
 
             pictureBoxesReady = true;
+        }
+
+        internal void UpdateScore(GameStateView gameStateView)
+        {
+            foreach(Player p in gameStateView.Players)
+            {
+                if(p.PlayerId == this.Pid)
+                {
+                    this.score = p.Score;
+
+                    //ScoreLabel.SetPropertyThreadSafe(() => ScoreLabel.Text, "Score: " + score.ToString());
+                    ScoreLabel.Text = "Player " + this.Pid + " Score: " + score.ToString();
+                }
+            }
         }
 
         private PictureBox CreateGhostPictureBox(Bitmap resource)
@@ -191,9 +172,10 @@ namespace OGP.Client
                 LoadPictureBoxes(gameStateView);
             }
 
+            //UpdateScore(gameStateView);
             UpdateCoins(gameStateView);
             UpdateGhosts(gameStateView);
-            DisplayPlayers(gameStateView);
+            UpdatePlayers(gameStateView);
         }
 
         private PictureBox DrawElement(string ghostname, string tag, Bitmap resource, int x, int y, Size size)
@@ -245,7 +227,7 @@ namespace OGP.Client
             }
         }
 
-        private void DisplayPlayers(GameStateView gameStateView)
+        private void UpdatePlayers(GameStateView gameStateView)
         {
             foreach (Player player in gameStateView.Players)
             {
@@ -253,7 +235,17 @@ namespace OGP.Client
                 {
                     pictureBox = CreatePlayerPictureBox();
                     InitializeDrawing(pictureBox);
+                    if(player.PlayerId == Pid)
+                    {
+                        this.pacman = pictureBox;
+                    }
                     playerPictureBoxes.Add(player.PlayerId, pictureBox);
+                }
+
+                // Update Player Score
+                if (player.PlayerId == this.Pid)
+                {
+                    ScoreLabel.Text = "Player " + this.Pid + " Score: " + player.Score.ToString();
                 }
 
                 if (player.Alive)
@@ -293,146 +285,6 @@ namespace OGP.Client
             return null;
         }
 
-        private void Play()
-        {
-            PictureBox player = null;
-
-            int tick = 20;
-            List<string> moves = new List<string>();
-            int roundId = 0;
-
-            while (roundId < moves.Count)
-            {
-                label2.SetPropertyThreadSafe(() => label2.Text, moves[roundId]);
-                label1.Text = "Score: " + score;
-
-                MovePacMan(player, moves[roundId]);
-
-                //coinsArray[1].SetPropertyThreadSafe(() => coinsArray[1].Left, coinsArray[1].Left = coinsArray[1].Left + speed);
-                //coinsArray[3].SetPropertyThreadSafe(() => coinsArray[1].Left, coinsArray[1].Left + speed);
-
-                if (goleftNew)
-                {
-                    if (player.Left > (boardLeft))
-                        player.Left -= speed;
-                }
-                if (gorightNew)
-                {
-                    if (player.Left < (boardRight))
-                        player.Left += speed;
-                }
-                if (goupNew)
-                {
-                    if (player.Top > (boardTop))
-                        player.Top -= speed;
-                }
-                if (godownNew)
-                {
-                    if (player.Top < (boardBottom))
-                        player.Top += speed;
-                }
-                //move ghosts
-                redGhost.Left += ghost1;
-                yellowGhost.Left += ghost2;
-
-                // if the red ghost hits the wall 1 then wereverse the speed
-                if (redGhost.Bounds.IntersectsWith(wallPictureBoxes[0].Bounds))
-                    ghost1 = -ghost1;
-                // if the red ghost hits the wall 2 we reverse the speed
-                else if (redGhost.Bounds.IntersectsWith(wallPictureBoxes[1].Bounds))
-                    ghost1 = -ghost1;
-                // if the yellow ghost hits the wall 3 then we reverse the speed
-                if (yellowGhost.Bounds.IntersectsWith(wallPictureBoxes[2].Bounds))
-                    ghost2 = -ghost2;
-                // if the yellow chost hits the wall 4 then wereverse the speed
-                else if (yellowGhost.Bounds.IntersectsWith(wallPictureBoxes[3].Bounds))
-                    ghost2 = -ghost2;
-                //moving ghosts and bumping with the walls end
-                //for loop to check walls, ghosts and points
-                foreach (Control x in this.Controls)
-                {
-                    // checking if the player hits the wall or the ghost, then game is over
-                    if (x is PictureBox && (string)x.Tag == "wall" || (string)x.Tag == "ghost")
-                    {
-                        if (((PictureBox)x).Bounds.IntersectsWith(player.Bounds))
-                        {
-                            //image.Left = 0;
-                            //image.Top = 25;
-                            label2.Text = "GAME OVER";
-                            label2.Visible = true;
-                            //timer1.Stop();
-                        }
-                    }
-                    if (x is PictureBox && (string)x.Tag == "coin")
-                    {
-                        if (((PictureBox)x).Bounds.IntersectsWith(player.Bounds))
-                        {
-                            this.Controls.Remove(x);
-                            score++;
-                            //TODO check if all coins where "eaten"
-                            if (score == total_coins)
-                            {
-                                //pacman.Left = 0;
-                                //pacman.Top = 25;
-                                label2.Text = "GAME WON!";
-                                label2.Visible = true;
-                                //timer1.Stop();
-                            }
-                        }
-                    }
-                }
-                pinkGhost.Left += ghost3x;
-                pinkGhost.Top += ghost3y;
-
-                if (pinkGhost.Left < boardLeft ||
-                    pinkGhost.Left > boardRight ||
-                    (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[0].Bounds)) ||
-                    (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[1].Bounds)) ||
-                    (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[2].Bounds)) ||
-                    (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[3].Bounds)))
-                {
-                    ghost3x = -ghost3x;
-                }
-                if (pinkGhost.Top < boardTop || pinkGhost.Top + pinkGhost.Height > boardBottom - 2)
-                {
-                    ghost3y = -ghost3y;
-                }
-
-                Thread.Sleep(tick);
-
-                lock (lockRoundId)
-                {
-                    roundId++;
-                }
-            }
-        }
-
-        private void MovePacMan(PictureBox player, string move)
-        {
-            switch (move)
-            {
-                case "UP":
-                    goupNew = true;
-                    player.Image = Properties.Resources.Up;
-                    break;
-
-                case "DOWN":
-                    godownNew = true;
-                    player.Image = Properties.Resources.down;
-                    break;
-
-                case "LEFT":
-                    goleftNew = true;
-                    player.Image = Properties.Resources.Left;
-                    break;
-
-                case "RIGHT":
-                    gorightNew = true;
-                    player.Image = Properties.Resources.Right;
-                    break;
-            }
-        }
-
         private void SendDirection(Direction direction)
         {
             if (direction != lastSentDirection)
@@ -453,26 +305,26 @@ namespace OGP.Client
             if (e.KeyCode == Keys.Left)
             {
                 SendDirection(Direction.LEFT);
-                goleft = true;
-                pacman.Image = Properties.Resources.Left;
+                //goleft = true;
+                //pacman.Image = Properties.Resources.Left;
             }
             if (e.KeyCode == Keys.Right)
             {
                 SendDirection(Direction.RIGHT);
-                goright = true;
-                pacman.Image = Properties.Resources.Right;
+                //goright = true;
+                //pacman.Image = Properties.Resources.Right;
             }
             if (e.KeyCode == Keys.Up)
             {
                 SendDirection(Direction.UP);
-                goup = true;
-                pacman.Image = Properties.Resources.Up;
+                //goup = true;
+                //pacman.Image = Properties.Resources.Up;
             }
             if (e.KeyCode == Keys.Down)
             {
                 SendDirection(Direction.DOWN);
-                godown = true;
-                pacman.Image = Properties.Resources.down;
+                //godown = true;
+                //pacman.Image = Properties.Resources.down;
             }
             if (e.KeyCode == Keys.Enter)
             {
@@ -489,98 +341,6 @@ namespace OGP.Client
                 (e.KeyCode == Keys.Down && lastSentDirection == Direction.UP))
             {
                 SendDirection(Direction.NONE);
-            }
-        }
-
-        private void Timer1_Tick(object sender, EventArgs e)
-        {
-            label1.Text = "Score: " + score;
-            //move player
-            if (goleft)
-            {
-                if (pacman.Left > (boardLeft))
-                    pacman.Left -= speed;
-            }
-            if (goright)
-            {
-                if (pacman.Left < (boardRight))
-                    pacman.Left += speed;
-            }
-            if (goup)
-            {
-                if (pacman.Top > (boardTop))
-                    pacman.Top -= speed;
-            }
-            if (godown)
-            {
-                if (pacman.Top < (boardBottom))
-                    pacman.Top += speed;
-            }
-            //move ghosts
-            redGhost.Left += ghost1;
-            yellowGhost.Left += ghost2;
-
-            // if the red ghost hits the wall 1 then wereverse the speed
-            if (redGhost.Bounds.IntersectsWith(wallPictureBoxes[0].Bounds))
-                ghost1 = -ghost1;
-            // if the red ghost hits the wall 2 we reverse the speed
-            else if (redGhost.Bounds.IntersectsWith(wallPictureBoxes[1].Bounds))
-                ghost1 = -ghost1;
-            // if the yellow ghost hits the wall 3 then we reverse the speed
-            if (yellowGhost.Bounds.IntersectsWith(wallPictureBoxes[2].Bounds))
-                ghost2 = -ghost2;
-            // if the yellow chost hits the wall 4 then wereverse the speed
-            else if (yellowGhost.Bounds.IntersectsWith(wallPictureBoxes[3].Bounds))
-                ghost2 = -ghost2;
-            //moving ghosts and bumping with the walls end
-            //for loop to check walls, ghosts and points
-            foreach (Control x in this.Controls)
-            {
-                // checking if the player hits the wall or the ghost, then game is over
-                if (x is PictureBox && (string)x.Tag == "wall" || (string)x.Tag == "ghost")
-                {
-                    if (((PictureBox)x).Bounds.IntersectsWith(pacman.Bounds))
-                    {
-                        pacman.Left = 0;
-                        pacman.Top = 25;
-                        label2.Text = "GAME OVER";
-                        label2.Visible = true;
-                        //timer1.Stop();
-                    }
-                }
-                if (x is PictureBox && (string)x.Tag == "coin")
-                {
-                    if (((PictureBox)x).Bounds.IntersectsWith(pacman.Bounds))
-                    {
-                        this.Controls.Remove(x);
-                        score++;
-                        //TODO check if all coins where "eaten"
-                        if (score == total_coins)
-                        {
-                            //pacman.Left = 0;
-                            //pacman.Top = 25;
-                            label2.Text = "GAME WON!";
-                            label2.Visible = true;
-                            //timer1.Stop();
-                        }
-                    }
-                }
-            }
-            pinkGhost.Left += ghost3x;
-            pinkGhost.Top += ghost3y;
-
-            if (pinkGhost.Left < boardLeft ||
-                pinkGhost.Left > boardRight ||
-                (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[0].Bounds)) ||
-                (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[1].Bounds)) ||
-                (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[2].Bounds)) ||
-                (pinkGhost.Bounds.IntersectsWith(wallPictureBoxes[3].Bounds)))
-            {
-                ghost3x = -ghost3x;
-            }
-            if (pinkGhost.Top < boardTop || pinkGhost.Top + pinkGhost.Height > boardBottom - 2)
-            {
-                ghost3y = -ghost3y;
             }
         }
 
