@@ -206,23 +206,20 @@ namespace OGP.Server
         {
             foreach (Ghost ghost in gameState.Ghosts)
             {
-                // TODO: check if ghost will hit and obstacle if it completes the move
-                // New coordinate:
-                //ghost.X + ghost.DX
-                //ghost.Y + ghost.DY
+                if (GhostHitsVerticalObstacle(ghost))
+                {
+                    ghost.DY = -ghost.DY;
+                }
 
-                /*if (willHitVerticalObstacle())
+                if (GhostHitsHorizontalObstacle(ghost))
                 {
                     ghost.DX = -ghost.DX;
                 }
 
-                if (willHitHorizontalObstacle())
-                {
-                    ghost.DY = -ghost.DY;
-                }*/
-
                 ghost.X += ghost.DX;
                 ghost.Y += ghost.DY;
+
+                Console.WriteLine("AFTER ghost " + ghost.Color + " ghost X " + ghost.X + " ghost Y " + ghost.Y + " ghost DX" + ghost.DX + " ghost DY " + ghost.DY);
 
                 foreach (Player player in gameState.Players)
                 {
@@ -294,16 +291,63 @@ namespace OGP.Server
 
         private bool DetectPlayerGhostCollision(Player player, Ghost ghost)
         {
-            return (player.X < ghost.X + ObjectDimensions.GHOST_WIDTH
-                        && player.X + ObjectDimensions.PLAYER_WIDTH > ghost.X
-                        && player.Y < ghost.Y + ObjectDimensions.GHOST_HEIGHT
-                        && player.Y + ObjectDimensions.PLAYER_HEIGHT > ghost.Y);
+            return DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
+                                   ghost.X, ghost.Y, ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT);
+        }
+
+        private bool GhostHitsVerticalObstacle(Ghost ghost)
+        {
+            return (WillHitVerticalBoard(ghost.Y, ObjectDimensions.GHOST_HEIGHT) || DetectGhostWallCollision(ghost));
+            
+        }
+
+        private bool WillHitVerticalBoard(int y, int height)
+        {
+            return ((y - height <= 0 || y + height >= ObjectDimensions.BOARD_HEIGHT));
+        }
+
+        private bool WillHitHorizontalBoard(int x, int width)
+        {
+            return ((x - width <= 0 || x + width >= ObjectDimensions.BOARD_WIDTH));
+        }
+        
+        private bool GhostHitsHorizontalObstacle(Ghost ghost)
+        {
+            return (WillHitHorizontalBoard(ghost.X, ObjectDimensions.GHOST_WIDTH ) || DetectGhostWallCollision(ghost));
         }
 
         private bool DetectPlayerWallCollision(Player player, List<Wall> walls)
         {
-            // TODO
+            foreach(Wall wall in walls)
+            {
+                if (DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
+                                    wall.X, wall.Y, wall.Width, wall.Height))
+                {
+                    return true;
+                }
+            }
             return false;
+        }
+
+        private bool DetectGhostWallCollision(Ghost ghost)
+        {
+            foreach(Wall wall in gameState.Walls)
+            {
+                if (DetectCollision(ghost.X, ghost.Y, ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT,
+                                    wall.X, wall.Y, wall.Width, wall.Height))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool DetectCollision(int x1, int y1, int width1, int height1, int x2, int y2, int width2, int height2)
+        {
+            return (x1 < x2 + width2
+                        && x1 + width1 > x2
+                        && y1 < y2 + height2
+                        && y1 +height1 > y2);
         }
 
         private void WriteState()

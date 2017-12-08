@@ -29,18 +29,18 @@
 
         public static readonly GhostConstants PINK_GHOST = new GhostConstants
         {
-            STARTING_X = 200,
+            STARTING_X = 210,
             STARTING_Y = 50,
-            VELOCITY_X = 5,
-            VELOCITY_Y = 0
+            VELOCITY_X = 3,
+            VELOCITY_Y = 2
         };
 
         public static readonly GhostConstants YELLOW_GHOST = new GhostConstants
         {
             STARTING_X = 200,
             STARTING_Y = 235,
-            VELOCITY_X = 0,
-            VELOCITY_Y = 5
+            VELOCITY_X = 5,
+            VELOCITY_Y = 0
         };
 
         public static readonly GhostConstants RED_GHOST = new GhostConstants
@@ -48,7 +48,7 @@
             STARTING_X = 240,
             STARTING_Y = 90,
             VELOCITY_X = 5,
-            VELOCITY_Y = 5
+            VELOCITY_Y = 0
         };
     }
 }
