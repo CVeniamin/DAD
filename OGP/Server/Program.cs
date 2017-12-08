@@ -94,8 +94,15 @@ namespace OGP.Server
                     break;
                 }
 
-                ICommand cmd = CommandParser.Command.Parse(input);
-                cmd.Exec(gameState);
+                try
+                {
+                    ICommand cmd = CommandParser.Command.Parse(input);
+                    Console.WriteLine(cmd.Exec(gameState));
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Got exception on input thread");
+                }
             }
         }
     }

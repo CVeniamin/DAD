@@ -11,6 +11,7 @@ namespace OGP.Server
     {
         public string Exec(object arg0)
         {
+            // TODO 
             return String.Empty;
         }
     }
@@ -26,6 +27,13 @@ namespace OGP.Server
 
         public string Exec(object arg0)
         {
+            if (arg0 is GameState gameState)
+            {
+                if (gameState.PreviousGames.TryGetValue(roundId, out string localState))
+                {
+                    return localState;
+                }
+            }
             return String.Empty;
         }
     }
@@ -36,6 +44,7 @@ namespace OGP.Server
 
         public InjectDelay(string dstPid)
         {
+            // TODO
             this.dstPid = dstPid;
         }
 
@@ -49,6 +58,7 @@ namespace OGP.Server
     {
         public string Exec(object arg0)
         {
+            // TODO
             return String.Empty;
         }
     }
@@ -57,6 +67,7 @@ namespace OGP.Server
     {
         public string Exec(object arg0)
         {
+            // TODO
             return String.Empty;
         }
     }

@@ -20,7 +20,6 @@ namespace OGP.Client
         private delegate void PrintChatMessage(string msg);
 
         private delegate void IngestGameStateView(GameStateView gameStateView);
-
         [STAThread]
         public static void Main(string[] args)
         {
@@ -127,7 +126,6 @@ namespace OGP.Client
             // Start listening for input
             while (true)
             {
-                Console.WriteLine("Submit a command ", "CRITICAL");
                 var input = Console.ReadLine();
 
                 if (input == null || input.Trim() == "Quit")
@@ -135,10 +133,14 @@ namespace OGP.Client
                     Console.WriteLine("Exit triggered by input", "CRITICAL");
                     break;
                 }
-                Console.WriteLine("input " + input);
                 ICommand cmd = CommandParser.Command.Parse(input);
                 string result = cmd.Exec(gameState);
-                Console.WriteLine(result);
+
+                // TODO: debug gameState here is different from gameState from StateHandler
+                if(result != String.Empty)
+                {
+                    Console.WriteLine(result);
+                }
             }
         }
 

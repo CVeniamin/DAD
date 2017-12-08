@@ -16,6 +16,8 @@ namespace OGP.Server
         public List<Server> Servers;
         public bool GameOver;
         public int RoundId;
+        public Dictionary<int, string> PreviousGames;
+
     }
 
     public class GameState
@@ -28,6 +30,8 @@ namespace OGP.Server
 
         public bool GameOver { get; set; }
         public int RoundId { get; set; }
+
+        public Dictionary<int, string> PreviousGames = new Dictionary<int, string>();
 
         public GameState(List<string> existsingServersList)
         {
@@ -166,7 +170,8 @@ namespace OGP.Server
                 Walls = Walls,
                 Servers = Servers,
                 RoundId = RoundId,
-                GameOver = GameOver
+                GameOver = GameOver,
+                PreviousGames = PreviousGames
             };
         }
 
@@ -220,24 +225,25 @@ namespace OGP.Server
             Servers = newGameStateView.Servers;
             RoundId = newGameStateView.RoundId;
             GameOver = newGameStateView.GameOver;
+            PreviousGames = newGameStateView.PreviousGames;
         }
 
         public String WriteState()
         {
             StringBuilder outputString = new StringBuilder();
-            foreach (Ghost ghost in Ghosts)
+            foreach (Ghost ghost in this.Ghosts)
             {
                 outputString.Append(String.Format("M, {0} , {1} \n", ghost.X, ghost.Y));
             }
-            foreach (Wall wall in Walls)
+            foreach (Wall wall in this.Walls)
             {
                 outputString.Append(String.Format("W, {0} , {1} \n", wall.X, wall.Y));
             }
-            foreach (Player player in Players)
+            foreach (Player player in this.Players)
             {
                 outputString.Append(String.Format("{0}, {1},  {2} , {3} \n", player.PlayerId, player.Alive ? "P" : "L", player.X, player.Y));
             }
-            foreach (Coin coin in Coins)
+            foreach (Coin coin in this.Coins)
             {
                 if (coin.Visible)
                 {

@@ -118,12 +118,15 @@ namespace OGP.Server
 
                 Console.WriteLine("Processing round {0}", gameState.RoundId);
 
+                //Add this game to previous games, used later for LocalState command
+                gameState.PreviousGames.Add(gameState.RoundId, gameState.WriteState());
+
                 MovePlayers(); // This will stop movement if player hits the wall
                 MoveGhosts(); // This will kill players
                 CollectCoins(); // This will update player scores for alive players
 
                 CheckIfGameOver();
-
+                
                 //gameState.WriteState(); // This should write the game state to file or standard output or something
             }
 

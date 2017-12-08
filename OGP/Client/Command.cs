@@ -31,10 +31,10 @@ namespace OGP.Client
             // TODO
             if (arg0 is GameState gameState)
             {
-                Console.WriteLine("Called Exec on LocalState", "CRITICAL");
-                string output = gameState.WriteState();
-                Console.WriteLine("output " + output, "CRITICAL");
-                return output;
+                if(gameState.PreviousGames.TryGetValue(roundId, out string localState))
+                {
+                    return localState;
+                }
             }
             return String.Empty;
         }

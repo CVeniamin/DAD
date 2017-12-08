@@ -1,5 +1,6 @@
 ﻿using OGP.PCS;
 using System;
+using System.IO;
 using System.Threading;
 
 namespace OGP.PuppetMaster
@@ -103,6 +104,7 @@ namespace OGP.PuppetMaster
 
         public string Exec()
         {
+            // TODO
             foreach (string pid in PcsPool.GetAllPids())
             {
                 PcsManager pcs = PcsPool.GetByPid(pid);
@@ -218,7 +220,12 @@ namespace OGP.PuppetMaster
             PcsManager pcs = PcsPool.GetByPid(pid);
             if (pcs != null)
             {
-                return pcs.LocalState(pid, roundId);
+                string localState = pcs.LocalState(pid, roundId); 
+                using (StreamWriter file = new StreamWriter(String.Format("LocalState-{0}-{1}", pid, roundId)))
+                {
+                    file.WriteLine(localState);
+                }
+                return localState;
             }
 
             return String.Empty;
