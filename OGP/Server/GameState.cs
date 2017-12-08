@@ -215,7 +215,16 @@ namespace OGP.Server
         {
             if (GetPlayerByUrl(Url) == null)
             {
-                Players.Add(new Player { X = 8, Y = (Players.Count + 1) * 40, PlayerId = Pid, Url = Url, Score = 0, Alive = true, Width = 35, Height = 35});
+                Players.Add(new Player {
+                    X = 8,
+                    Y = (Players.Count + 1) * 40,
+                    PlayerId = Pid,
+                    Url = Url,
+                    Score = 0,
+                    Alive = true,
+                    Width = 35,
+                    Height = 35
+                });
             }
         }
 
