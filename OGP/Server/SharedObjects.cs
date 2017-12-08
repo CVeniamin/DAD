@@ -21,6 +21,8 @@ namespace OGP.Server
         public int Score { get; set; }
         public bool Alive { get; set; }
         public Direction Direction { get; set; }
+        public int Width { get; internal set; }
+        public int Height { get; internal set; }
     }
 
     [Serializable]
@@ -29,6 +31,8 @@ namespace OGP.Server
         public GhostColor Color { get; internal set; }
         public int X { get; internal set; }
         public int Y { get; internal set; }
+        public int Width { get; internal set; }
+        public int Height { get; internal set; }
     }
 
     [Serializable]
@@ -36,6 +40,8 @@ namespace OGP.Server
     {
         public int X { get; internal set; }
         public int Y { get; internal set; }
+        public int Width { get; internal set; }
+        public int Height { get; internal set; }
     }
 
     [Serializable]
@@ -43,8 +49,8 @@ namespace OGP.Server
     {
         public int X { get; internal set; }
         public int Y { get; internal set; }
-        public int SizeX { get; set; }
-        public int SizeY { get; set; }
+        public int Width { get; internal set; }
+        public int Height { get; internal set; }
     }
 
     [Serializable]

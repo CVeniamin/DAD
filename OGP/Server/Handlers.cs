@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 
 namespace OGP.Server
@@ -87,12 +88,31 @@ namespace OGP.Server
              }*/
 
             MovePlayers(); // This will stop movement if player hits the wall
-            // MoveGhosts(); // This will kill players
-            // CollectCoins(); // This will update player scores for alive players
+            MoveGhosts(); // This will kill players
+            CollectCoins(); // This will update player scores for alive players
 
-            // WriteState(); // This should write the game state to file or standard output or something
+            //WriteState(); // This should write the game state to file or standard output or something
 
             DispatchState();
+        }
+
+        private void WriteState()
+        {
+            //TODO
+        }
+
+        private void MoveGhosts()
+        {
+            foreach (Ghost ghost in gameState.Ghosts)
+            {
+                foreach (Player player in gameState.Players)
+                {
+                    if (DetectPlayerGhostCollision(player, ghost))
+                    {
+                        player.Alive = false;
+                    }
+                }
+            }
         }
 
         private void MovePlayers()
@@ -143,6 +163,68 @@ namespace OGP.Server
         public void SetOutManager(OutManager outManager)
         {
             this.outManager = outManager;
+        }
+
+        private void CollectCoins()
+        {
+            foreach (Coin coin in gameState.Coins)
+            {
+                foreach (Player player in gameState.Players)
+                {
+                    if (DetectPlayerCoinCollision(player, coin))
+                    {
+                        player.Score++;
+                        gameState.Coins.TryTake(out Coin c);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private bool DetectPlayerCoinCollision(Player player, Coin coin)
+        {
+            if (player.X < coin.X + coin.Width
+                        && player.X + player.Width > coin.X
+                        && player.Y < coin.Y + coin.Height
+                        && player.Y + player.Height > coin.Y)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private bool DetectPlayerGhostCollision(Player player, Ghost ghost) {
+            if (player.X < ghost.X + ghost.Width
+                        && player.X + player.Width > ghost.X
+                        && player.Y < ghost.Y + ghost.Height
+                        && player.Y + player.Height > ghost.Y)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private void MoveGhost()
+        {
+            foreach (Player player in gameState.Players)
+            {
+                switch (player.Direction)
+                {
+                    case Direction.UP:
+                        player.Y--;
+                        break;
+                    case Direction.DOWN:
+                        player.Y++;
+                        break;
+                    case Direction.LEFT:
+                        player.X--;
+                        break;
+                    case Direction.RIGHT:
+                        player.X++;
+                        break;
+                }
+
+            }
         }
     }
 

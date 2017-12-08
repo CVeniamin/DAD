@@ -94,7 +94,7 @@ namespace OGP.Client
             new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions)).Start();
             
             Application.Run(mainForm);
-
+            
             // Start listening for input
             while (true)
             {
@@ -132,6 +132,8 @@ namespace OGP.Client
                 {
                     sentThisTick = false;
 
+                    Console.WriteLine("round Id at " + roundId);
+                    
                     if (replayingMoves && replayMoves.TryGetValue(roundId, out Direction nextMove) && !gameOver)
                     {
                         

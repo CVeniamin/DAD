@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace OGP.Server
@@ -8,7 +9,7 @@ namespace OGP.Server
     {
         public List<Player> Players;
         public List<Ghost> Ghosts;
-        public List<Coin> Coins;
+        public ConcurrentBag<Coin> Coins;
         public List<Wall> Walls;
         public List<Server> Servers;
         public bool GameOver;
@@ -21,7 +22,7 @@ namespace OGP.Server
 
         public List<Player> Players { get; private set; }
         public List<Ghost> Ghosts { get; private set; }
-        public List<Coin> Coins { get; private set; }
+        public ConcurrentBag<Coin> Coins { get; private set; }
         public List<Wall> Walls { get; private set; }
         public List<Server> Servers { get; private set; }
 
@@ -52,21 +53,27 @@ namespace OGP.Server
             {
                 X = 200,
                 Y = 50,
-                Color = GhostColor.Pink
+                Color = GhostColor.Pink,
+                Width = 35,
+                Height = 35
             };
 
             Ghost yellow = new Ghost
             {
                 X = 200,
                 Y = 235,
-                Color = GhostColor.Yellow
+                Color = GhostColor.Yellow,
+                Width = 35,
+                Height = 35
             };
 
             Ghost red = new Ghost
             {
                 X = 240,
                 Y = 90,
-                Color = GhostColor.Red
+                Color = GhostColor.Red,
+                Width = 35,
+                Height = 35
             };
 
             Ghosts.Add(pink);
@@ -76,7 +83,7 @@ namespace OGP.Server
 
         private void InitCoins()
         {
-            Coins = new List<Coin>();
+            Coins = new ConcurrentBag<Coin>();
 
             short totalCoins = 41;
 
@@ -97,6 +104,8 @@ namespace OGP.Server
                 {
                     X = x,
                     Y = y,
+                    Width = 15,
+                    Height = 15
                 };
 
                 x += 60;
@@ -114,32 +123,32 @@ namespace OGP.Server
             {
                 X = 110,
                 Y = 50,
-                SizeX = 15,
-                SizeY = 80
+                Width = 15,
+                Height = 80
             };
 
             Wall w2 = new Wall
             {
                 X = 280,
                 Y = 50,
-                SizeX = 20,
-                SizeY = 60
+                Width = 20,
+                Height = 60
             };
 
             Wall w3 = new Wall
             {
                 X = 110,
                 Y = 245,
-                SizeX = 15,
-                SizeY = 80
+                Width = 15,
+                Height = 80
             };
 
             Wall w4 = new Wall
             {
                 X = 300,
                 Y = 245,
-                SizeX = 20,
-                SizeY = 60,
+                Width = 20,
+                Height = 60,
             };
 
             Walls.Add(w1);
@@ -206,7 +215,7 @@ namespace OGP.Server
         {
             if (GetPlayerByUrl(Url) == null)
             {
-                Players.Add(new Player { X = 8, Y = (Players.Count + 1) * 40, PlayerId = Pid, Url = Url, Score = 0, Alive = true });
+                Players.Add(new Player { X = 8, Y = (Players.Count + 1) * 40, PlayerId = Pid, Url = Url, Score = 0, Alive = true, Width = 35, Height = 35});
             }
         }
 

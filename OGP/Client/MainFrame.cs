@@ -387,7 +387,7 @@ namespace OGP.Client
         private PictureBox[] playersArray;
         private Direction lastSentDirection;
 
-        private PictureBox DrawElement(string ghostname, string tag, Bitmap resource, int x, int y)
+        private PictureBox DrawElement(string ghostname, string tag, Bitmap resource, int x, int y, int width, int height)
         {
             PictureBox element = new PictureBox
             {
@@ -396,7 +396,7 @@ namespace OGP.Client
                 Location = new Point(x, y),
                 Margin = new Padding(4),
                 Name = ghostname,
-                Size = new Size(35, 35),
+                Size = new Size(width, height),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 TabIndex = 3,
                 TabStop = false,
@@ -415,10 +415,10 @@ namespace OGP.Client
 
         private void Display(GameStateView gameStateView)
         {
-            DisplayPlayers(gameStateView);
             DisplayWalls(gameStateView);
             DisplayGhosts(gameStateView);
             DisplayCoins(gameStateView);
+            DisplayPlayers(gameStateView);
         }
 
         private void DisplayPlayers(GameStateView gameStateView)
@@ -427,7 +427,7 @@ namespace OGP.Client
             int i = 0;
             foreach (Player player in gameStateView.Players)
             {
-                playersArray[i] = DrawElement(player.PlayerId, "pacman", global::OGP.Client.Properties.Resources.Left, player.X, player.Y);
+                playersArray[i] = DrawElement(player.PlayerId, "pacman", global::OGP.Client.Properties.Resources.Left, player.X, player.Y, player.Width, player.Height);
                 i++;
             }
         }
@@ -438,7 +438,7 @@ namespace OGP.Client
             int i = 0;
             foreach (Wall wall in gameStateView.Walls)
             {
-                wallsArray[i] = DrawWall(wall.X, wall.Y, wall.SizeX, wall.SizeY);
+                wallsArray[i] = DrawWall(wall.X, wall.Y, wall.Width, wall.Height);
                 i++;
             }
         }
@@ -454,13 +454,13 @@ namespace OGP.Client
                 switch (ghost.Color)
                 {
                     case GhostColor.Pink:
-                        this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, ghost.X, ghost.Y);
+                        this.pinkGhost = DrawElement("pinkGhost", "ghost", global::OGP.Client.Properties.Resources.pink_guy, ghost.X, ghost.Y, ghost.Width, ghost.Height);
                         break;
                     case GhostColor.Yellow:
-                        this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, ghost.X, ghost.Y);
+                        this.yellowGhost = DrawElement("yellowGhost", "ghost", global::OGP.Client.Properties.Resources.yellow_guy, ghost.X, ghost.Y, ghost.Width, ghost.Height);
                         break;
                     case GhostColor.Red:
-                        this.redGhost = DrawElement("redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, ghost.X, ghost.Y);
+                        this.redGhost = DrawElement("redGhost", "ghost", global::OGP.Client.Properties.Resources.red_guy, ghost.X, ghost.Y, ghost.Width, ghost.Height);
                         break;
                 }
             }
@@ -474,14 +474,14 @@ namespace OGP.Client
             int i = 0;
             foreach (Coin c in gameStateView.Coins)
             {
-                coinsArray[i] = DrawCoin(tabIndex, c.X, c.Y);
+                coinsArray[i] = DrawCoin(tabIndex, c.X, c.Y, c.Width, c.Height);
                 i++;
                 tabIndex++;
             }
         }
 
 
-        private PictureBox DrawWall(int x, int y, int sizeX, int sizeY)
+        private PictureBox DrawWall(int x, int y, int width, int height)
         {
             PictureBox wall = new PictureBox
             {
@@ -489,7 +489,7 @@ namespace OGP.Client
                 Location = new Point(x, y),
                 Margin = new Padding(4),
                 Name = "wall",
-                Size = new Size(sizeX, sizeY),
+                Size = new Size(width, height),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 TabIndex = 3,
                 TabStop = false,
@@ -500,7 +500,7 @@ namespace OGP.Client
             return wall;
         }
 
-        private PictureBox DrawCoin(int tabIndex, int x, int y)
+        private PictureBox DrawCoin(int tabIndex, int x, int y, int width, int height)
         {
             PictureBox coin = new PictureBox
             {
@@ -508,7 +508,7 @@ namespace OGP.Client
                 Location = new Point(x, y),
                 Margin = new Padding(4),
                 Name = "coin",
-                Size = new Size(15, 15),
+                Size = new Size(width, height),
                 SizeMode = PictureBoxSizeMode.StretchImage,
                 TabIndex = tabIndex,
                 TabStop = false,
@@ -517,8 +517,6 @@ namespace OGP.Client
             InitializeDrawing(coin);
             return coin;
         }
-
-
 
         public void AppendMessageToChat(string message)
         {
