@@ -1,17 +1,13 @@
 ﻿using OGP.Middleware;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
 
 namespace OGP.Server
 {
     public interface IHandler
     {
         void Process(string source, object args);
+
         void SetOutManager(OutManager outManager);
     }
 
@@ -107,7 +103,8 @@ namespace OGP.Server
                 Console.WriteLine("Game over");
                 // Stop state updates? Force clients to quit? Send special message? Or clients already know gameState.GameOver == true
                 // TODO
-            } else
+            }
+            else
             {
                 gameState.RoundId = (int)(tickId - gameStartTickId);
 
@@ -118,10 +115,10 @@ namespace OGP.Server
                 CollectCoins(); // This will update player scores for alive players
 
                 CheckIfGameOver();
-                
+
                 WriteState(); // This should write the game state to file or standard output or something
             }
-            
+
             DispatchState();
         }
 
@@ -141,7 +138,8 @@ namespace OGP.Server
             int alivePlayers = 0;
             foreach (Player player in gameState.Players)
             {
-                if (player.Alive) {
+                if (player.Alive)
+                {
                     alivePlayers++;
                 }
             }
@@ -188,12 +186,15 @@ namespace OGP.Server
                     case Direction.UP:
                         player.Y -= GameConstants.PLAYER_SPEED;
                         break;
+
                     case Direction.DOWN:
                         player.Y += GameConstants.PLAYER_SPEED;
                         break;
+
                     case Direction.LEFT:
                         player.X -= GameConstants.PLAYER_SPEED;
                         break;
+
                     case Direction.RIGHT:
                         player.X += GameConstants.PLAYER_SPEED;
                         break;
@@ -239,7 +240,7 @@ namespace OGP.Server
             {
                 return;
             }
-            
+
             lock (dispatchDestinationLock)
             {
                 GameStateView gameStateView = gameState.GetGameStateView();
@@ -290,7 +291,7 @@ namespace OGP.Server
                         && player.Y < coin.Y + ObjectDimensions.COIN_HEIGHT
                         && player.Y + ObjectDimensions.PLAYER_HEIGHT > coin.Y);
         }
-        
+
         private bool DetectPlayerGhostCollision(Player player, Ghost ghost)
         {
             return (player.X < ghost.X + ObjectDimensions.GHOST_WIDTH
@@ -337,7 +338,7 @@ namespace OGP.Server
         private OutManager outManager;
         private Action<GameStateView> onNewGameStateView;
         private Object invokeLock = new Object();
-        
+
         public StateHandler(Action<GameStateView> onNewGameStateView)
         {
             this.onNewGameStateView = onNewGameStateView;
@@ -349,7 +350,8 @@ namespace OGP.Server
             {
                 onNewGameStateView?.Invoke((GameStateView)args);
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
 # if DEBUG
                 Console.WriteLine("Process got exception: " + ex.Message);
 # endif

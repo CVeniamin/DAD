@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
@@ -10,7 +9,7 @@ using System.Threading;
 namespace OGP.Server
 {
     internal class Program
-    {   
+    {
         private static void Main(string[] args)
         {
             var argsOptions = new ArgsOptions();
@@ -50,7 +49,7 @@ namespace OGP.Server
 
             // Create OutManager - for sending messages out
             OutManager outManager = new OutManager(argsOptions.ServerUrl, existsingServersList, gameState);
-            
+
             // Create action handler - for processing movements (when master)
             ActionHandler actionHandler = new ActionHandler(gameState, argsOptions.NumPlayers);
             actionHandler.SetOutManager(outManager);
@@ -66,7 +65,8 @@ namespace OGP.Server
             InManager inManager = new InManager(argsOptions.ServerUrl, actionHandler, null, stateHandler);
 
             // Begin server Timer
-            new Thread(() => {
+            new Thread(() =>
+            {
                 long tickId = 0;
 
                 while (true)
@@ -82,7 +82,7 @@ namespace OGP.Server
                     tickId++;
                 }
             }).Start();
-                
+
             // Start listening for input
             while (true)
             {

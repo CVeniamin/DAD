@@ -23,6 +23,7 @@ namespace OGP.Client
                 code.Invoke();
             }
         }
+
         private delegate void SetPropertyThreadSafeDelegate<TResult>(
     Control @this,
     Expression<Func<TResult>> property,

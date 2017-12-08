@@ -1,19 +1,14 @@
-﻿using OGP.Middleware;
-using OGP.Server;
+﻿using OGP.Server;
 using Sprache;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
-using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Windows.Forms;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
 
 namespace OGP.Client
 {
@@ -22,9 +17,11 @@ namespace OGP.Client
         public static int roundId = -1;
         public static bool gameOver = false;
 
-        delegate void PrintChatMessage(string msg);
-        delegate void SetTitleLabel(string text); // TODO
-        delegate void IngestGameStateView(GameStateView gameStateView);
+        private delegate void PrintChatMessage(string msg);
+
+        private delegate void SetTitleLabel(string text); // TODO
+
+        private delegate void IngestGameStateView(GameStateView gameStateView);
 
         [STAThread]
         public static void Main(string[] args)
@@ -65,18 +62,18 @@ namespace OGP.Client
 
             // Create GameState object - used to store the current local state of the system
             GameState gameState = new GameState(existsingServersList);
-            
+
             // Create OutManager - for sending messages out
             OutManager outManager = new OutManager(argsOptions.ClientUrl, existsingServersList, gameState);
 
             MainFrame mainForm = new MainFrame(argsOptions, outManager);
             IngestGameStateView gameStateViewIngest = new IngestGameStateView(mainForm.ApplyGameStateView);
 
-             // Create chat handler - for processing chat messages
+            // Create chat handler - for processing chat messages
             ChatHandler chatHandler = new ChatHandler((ChatMessage chatMessage) =>
             {
                 Console.WriteLine("Received chat message from {0}: {1}", chatMessage.Sender, chatMessage.Message);
-                
+
                 mainForm.Invoke(new PrintChatMessage(mainForm.AppendMessageToChat), chatMessage.Message);
             });
             chatHandler.SetOutManager(outManager);
@@ -85,7 +82,7 @@ namespace OGP.Client
             StateHandler stateHandler = new StateHandler((GameStateView gameStateView) =>
             {
                 Console.WriteLine("Got game state view for round {0} with {1} players", gameStateView.RoundId, gameStateView.Players.Count);
-                
+
                 try
                 {
                     gameState.Patch(gameStateView);
@@ -111,15 +108,15 @@ namespace OGP.Client
                 //save state to memory ?
             });
             stateHandler.SetOutManager(outManager);
-            
+
             // Create InManager - Remoting endpoint is made available here
             InManager inManager = new InManager(argsOptions.ClientUrl, null, chatHandler, stateHandler);
 
             // Begin client Timer
             new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions, gameState)).Start();
-            
+
             Application.Run(mainForm);
-            
+
             // Start listening for input
             while (true)
             {
@@ -147,7 +144,7 @@ namespace OGP.Client
                 return (T)formatter.Deserialize(ms);
             }
         }
-        
+
         private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions, GameState gameState)
         {
             {
@@ -155,7 +152,7 @@ namespace OGP.Client
                 bool replayingMoves = replayMoves.Count > 0;
                 bool sentThisTick = false;
 
-                //create new player on server 
+                //create new player on server
                 outManager.SendCommand(new Command
                 {
                     Type = Server.CommandType.Action,
@@ -170,10 +167,9 @@ namespace OGP.Client
                     sentThisTick = false;
 
                     Console.WriteLine("Round ID = " + gameState.RoundId);
-                    
+
                     /*if (replayingMoves && replayMoves.TryGetValue(roundId, out Direction nextMove) && !gameOver)
                     {
-                        
                         outManager.SendCommand(new Command
                         {
                             Type = Server.CommandType.Action,
@@ -182,7 +178,7 @@ namespace OGP.Client
                                 Direction = nextMove
                             }
                         }, OutManager.MASTER_SERVER);
-                            
+
                         sentThisTick = true;
                     }
                     else

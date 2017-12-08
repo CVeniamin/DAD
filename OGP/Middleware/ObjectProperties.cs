@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OGP.Middleware
+﻿namespace OGP.Middleware
 {
     public class ObjectDimensions
     {
@@ -13,7 +7,7 @@ namespace OGP.Middleware
 
         public const int GHOST_HEIGHT = 35;
         public const int GHOST_WIDTH = 35;
-        
+
         public const int PLAYER_HEIGHT = 35;
         public const int PLAYER_WIDTH = 35;
 

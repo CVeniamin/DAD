@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,8 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 
 namespace OGP.Server
@@ -49,7 +46,7 @@ namespace OGP.Server
         public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler)
         {
             Uri uri = new Uri(Url);
-            
+
             RemotingEndpoint endpoint = new RemotingEndpoint(this);
             RemotingServices.Marshal(endpoint, uri.AbsolutePath.Substring(1));
 
@@ -120,7 +117,8 @@ namespace OGP.Server
                     break;
 
                 case CommandType.State:
-                    if (stateHandler != null) {
+                    if (stateHandler != null)
+                    {
                         stateHandler.Process(command.Sender, command.Args);
                     }
                     break;
@@ -192,7 +190,6 @@ namespace OGP.Server
 
         public bool SendCommand(Command command, string destination)
         {
-
             string Url = null;
             if (destination == MASTER_SERVER)
             {
@@ -208,7 +205,7 @@ namespace OGP.Server
                 }
                 return true;
             }
-            
+
             // Fallback to passed destination
             if (Url == null || Url.Length == 0)
             {
@@ -277,7 +274,8 @@ namespace OGP.Server
                 try
                 {
                     Thread.Sleep(Timeout.Infinite);
-                } catch (ThreadInterruptedException)
+                }
+                catch (ThreadInterruptedException)
                 {
                 }
             }
@@ -301,20 +299,19 @@ namespace OGP.Server
                     if (ex is IOException || ex is SocketException)
                     {
                         ReportOffline(Url);
-                    } else
+                    }
+                    else
                     {
 # if DEBUG
                         Console.WriteLine(ex);
 # endif
                     }
                 }
-
             }
         }
 
         private void ReportOffline(string Url)
         {
-
             Process.GetCurrentProcess().Kill();
 
             if (Url.Equals(masterServer))
@@ -323,6 +320,8 @@ namespace OGP.Server
             }
             else
             {
+                // TODO: not sure if this is needed, or do we keep on trying? (for example if client crashes)
+
                 // Remove client(s) and server(s) at that Url from local state
                 gameState.Players.RemoveAll(player => player.Url == Url);
                 gameState.Servers.RemoveAll(server => server.Url == Url);
@@ -331,12 +330,17 @@ namespace OGP.Server
 
         private void FallbackToSlave()
         {
+            // TODO: Teodor?
+            // basically: select next best server, excluding master, from the list
+            // selection has to be idempotent - aka other clients/slaves will choose same server
+            // if no servers avaialble (only one master), then die?
+
             //while (gameState.Servers.Count > 0)
             //{
-                //Server server = gameState.Servers[0];
-                
+            //Server server = gameState.Servers[0];
+
             //}
-            
+
             // if (server.Url == )
             // this.serverList.Sort();
             // masterServer = serverList[0];
@@ -367,11 +371,12 @@ namespace OGP.Server
 
         internal Command Dequeue()
         {
-            if (!queue.TryDequeue(out Command command)) {
+            if (!queue.TryDequeue(out Command command))
+            {
                 return null;
             }
 
-            long pendingDelay = -1 ;
+            long pendingDelay = -1;
             if (command != null)
             {
                 long currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -383,7 +388,8 @@ namespace OGP.Server
                 try
                 {
                     Thread.Sleep(-(int)pendingDelay);
-                } catch (ThreadInterruptedException) { }
+                }
+                catch (ThreadInterruptedException) { }
             }
 
             return command;
@@ -405,7 +411,7 @@ namespace OGP.Server
             {
                 return endpoint;
             }
-            
+
             endpoint = (RemotingEndpoint)Activator.GetObject(typeof(RemotingEndpoint), Url);
             endpoints.Add(Url, endpoint);
 

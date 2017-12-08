@@ -1,5 +1,4 @@
 ﻿using System;
-using static OGP.Server.ActionHandler;
 
 namespace OGP.Server
 {
@@ -10,7 +9,7 @@ namespace OGP.Server
     [Serializable]
     public enum GhostColor
     { Pink, Red, Yellow };
-    
+
     [Serializable]
     public class Player
     {
@@ -55,7 +54,7 @@ namespace OGP.Server
     {
         public string Url { get; set; }
     }
-    
+
     [Serializable]
     public class GameMovement
     {

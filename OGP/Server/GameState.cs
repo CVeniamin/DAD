@@ -1,6 +1,5 @@
 ﻿using OGP.Middleware;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace OGP.Server
@@ -24,7 +23,7 @@ namespace OGP.Server
         public List<Coin> Coins { get; private set; }
         public List<Wall> Walls { get; private set; }
         public List<Server> Servers { get; private set; }
-        
+
         public bool GameOver { get; set; }
         public int RoundId { get; set; }
 
@@ -106,7 +105,7 @@ namespace OGP.Server
                 Coins.Add(c);
             }
         }
-        
+
         private void InitWalls()
         {
             Walls = new List<Wall>();
@@ -197,7 +196,8 @@ namespace OGP.Server
         {
             if (GetPlayerByUrl(Url) == null)
             {
-                Players.Add(new Player {
+                Players.Add(new Player
+                {
                     X = 8,
                     Y = (Players.Count + 1) * 40,
                     PlayerId = Pid,

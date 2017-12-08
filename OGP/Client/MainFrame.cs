@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
@@ -23,13 +22,12 @@ namespace OGP.Client
         private Size coinSize;
         private Size ghostSize;
         private Size playerSize;
-        
+
         private PictureBox[] coinPictureBoxes;
         private PictureBox[] ghostsArray;
         private PictureBox[] wallPictureBoxes;
         private Dictionary<string, PictureBox> playerPictureBoxes;
         private bool pictureBoxesReady = false;
-
 
         // direction player is moving in. Only one will be true
         private bool goup;
@@ -50,14 +48,17 @@ namespace OGP.Client
 
         //player speed
         private int speed = 5;
+
         private int score = 0; private int total_coins = 61;
 
         //ghost speed for the one direction ghosts
         private int ghost1 = 5;
+
         private int ghost2 = 5;
 
         //x and y directions for the bi-direccional pink ghost
         private int ghost3x = 5;
+
         private int ghost3y = 5;
         private List<string> moves;
 
@@ -66,9 +67,8 @@ namespace OGP.Client
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
-        
-        private Object lockRoundId = new Object();
 
+        private Object lockRoundId = new Object();
 
         internal MainFrame(ArgsOptions argsOptions, OutManager outManager)
         {
@@ -78,7 +78,7 @@ namespace OGP.Client
             this.Pid = argsOptions.Pid;
             this.numPlayers = argsOptions.NumPlayers;
             this.outManager = outManager;
-            
+
             label2.Visible = true;
             label2.Text = "Waiting for players...";
         }
@@ -89,7 +89,7 @@ namespace OGP.Client
             ghostSize = new Size(ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT);
             playerSize = new Size(ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT);
         }
-        
+
         private void LoadPictureBoxes(GameStateView gameStateView)
         {
             wallPictureBoxes = Enumerable.Repeat(0, gameStateView.Walls.Count).Select(c => new PictureBox
@@ -112,13 +112,13 @@ namespace OGP.Client
             pinkGhost = CreateGhostPictureBox(Properties.Resources.pink_guy);
             yellowGhost = CreateGhostPictureBox(Properties.Resources.yellow_guy);
             redGhost = CreateGhostPictureBox(Properties.Resources.red_guy);
-            
+
             playerPictureBoxes = new Dictionary<string, PictureBox>();
 
             DrawWalls(gameStateView.Walls); // Draw once
             DrawCoins(gameStateView.Coins); // Draw once
             DrawGhosts(); // Draw once
-            
+
             pictureBoxesReady = true;
         }
 
@@ -190,12 +190,12 @@ namespace OGP.Client
             {
                 LoadPictureBoxes(gameStateView);
             }
-            
+
             UpdateCoins(gameStateView);
             UpdateGhosts(gameStateView);
             DisplayPlayers(gameStateView);
         }
-        
+
         private PictureBox DrawElement(string ghostname, string tag, Bitmap resource, int x, int y, Size size)
         {
             PictureBox element = new PictureBox
@@ -233,9 +233,11 @@ namespace OGP.Client
                     case GhostColor.Pink:
                         pinkGhost.Location = new Point(ghost.X, ghost.Y);
                         break;
+
                     case GhostColor.Yellow:
                         yellowGhost.Location = new Point(ghost.X, ghost.Y);
                         break;
+
                     case GhostColor.Red:
                         redGhost.Location = new Point(ghost.X, ghost.Y);
                         break;
@@ -253,7 +255,7 @@ namespace OGP.Client
                     InitializeDrawing(pictureBox);
                     playerPictureBoxes.Add(player.PlayerId, pictureBox);
                 }
-                
+
                 if (player.Alive)
                 {
                     Bitmap updatedBitmap = DirectionToResource(player.Direction);
@@ -263,7 +265,8 @@ namespace OGP.Client
                     }
 
                     pictureBox.Location = new Point(player.X, player.Y);
-                } else
+                }
+                else
                 {
                     pictureBox.Visible = false;
                 }
@@ -289,8 +292,6 @@ namespace OGP.Client
 
             return null;
         }
-        
-
 
         private void Play()
         {
@@ -302,7 +303,6 @@ namespace OGP.Client
 
             while (roundId < moves.Count)
             {
-
                 label2.SetPropertyThreadSafe(() => label2.Text, moves[roundId]);
                 label1.Text = "Score: " + score;
 
@@ -415,14 +415,17 @@ namespace OGP.Client
                     goupNew = true;
                     player.Image = Properties.Resources.Up;
                     break;
+
                 case "DOWN":
                     godownNew = true;
                     player.Image = Properties.Resources.down;
                     break;
+
                 case "LEFT":
                     goleftNew = true;
                     player.Image = Properties.Resources.Left;
                     break;
+
                 case "RIGHT":
                     gorightNew = true;
                     player.Image = Properties.Resources.Right;
