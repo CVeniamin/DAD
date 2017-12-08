@@ -11,7 +11,8 @@ namespace OGP.Server
         public List<Coin> Coins;
         public List<Wall> Walls;
         public List<Server> Servers;
-        private bool GameOver;
+        public bool GameOver;
+        public int RoundId;
     }
 
     public class GameState
@@ -28,7 +29,8 @@ namespace OGP.Server
         private bool gameOver;
         public bool GameStarted { get => gameStarted; set => gameStarted = value; }
         public bool GameOver { get => gameOver; set => gameOver = value; }
-        
+        public int RoundId { get;  set; }
+
         public GameState(List<string> existsingServersList)
         {
             this.GameStarted = false;
@@ -170,7 +172,9 @@ namespace OGP.Server
                 Ghosts = Ghosts,
                 Coins = Coins,
                 Walls = Walls,
-                Servers = Servers
+                Servers = Servers,
+                RoundId = RoundId,
+                GameOver = GameOver
             };
         }
 

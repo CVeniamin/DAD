@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -159,7 +161,8 @@ namespace OGP.Server
 
         private GameState gameState;
         private Thread dispatchThread;
-        
+        private Object activeQueueLock = new Object();
+
         public OutManager(string selfUrl, List<string> serverList, GameState gameState)
         {
             if (serverList.Count == 0)
@@ -219,7 +222,11 @@ namespace OGP.Server
             }
 
             commandQueue.Enqueue(command);
-            activeQueues.Add(commandQueue);
+
+            lock (activeQueueLock)
+            {
+                activeQueues.Add(commandQueue);
+            }
 
             dispatchThread.Interrupt();
 
@@ -248,12 +255,15 @@ namespace OGP.Server
         {
             while (true)
             {
-                foreach (CommandQueue commandQueue in activeQueues)
+                lock (activeQueueLock)
                 {
-                    string Url = outQueues.FirstOrDefault(x => x.Value == commandQueue).Key;
-                    new Thread(() => EmitOutgoingCommands(commandQueue, Url)).Start();
+                    foreach (CommandQueue commandQueue in activeQueues)
+                    {
+                        string Url = outQueues.FirstOrDefault(x => x.Value == commandQueue).Key;
+                        new Thread(() => EmitOutgoingCommands(commandQueue, Url)).Start();
+                    }
+                    activeQueues.Clear();
                 }
-                activeQueues.Clear();
 
                 try
                 {
@@ -289,6 +299,9 @@ namespace OGP.Server
 
         private void ReportOffline(string Url)
         {
+
+            Process.GetCurrentProcess().Kill();
+
             if (Url.Equals(masterServer))
             {
                 FallbackToSlave();
@@ -319,11 +332,11 @@ namespace OGP.Server
     {
         private int delay = 0;
 
-        private Queue<Command> queue;
+        private ConcurrentQueue<Command> queue;
 
         public CommandQueue()
         {
-            queue = new Queue<Command>();
+            queue = new ConcurrentQueue<Command>();
         }
 
         internal void SetDelay(int delay)
@@ -339,13 +352,7 @@ namespace OGP.Server
 
         internal Command Dequeue()
         {
-            Command command = null;
-            try
-            {
-                command = queue.Dequeue();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!queue.TryDequeue(out Command command)) {
                 return null;
             }
 
@@ -371,14 +378,10 @@ namespace OGP.Server
     internal class EndpointPool
     {
         private Dictionary<string, RemotingEndpoint> endpoints;
-        private TcpChannel channel;
 
         public EndpointPool()
         {
             endpoints = new Dictionary<string, RemotingEndpoint>();
-
-            //channel = new TcpChannel();
-            //ChannelServices.RegisterChannel(channel, true);
         }
 
         public RemotingEndpoint GetByUrl(string Url)

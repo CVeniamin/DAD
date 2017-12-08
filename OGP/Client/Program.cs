@@ -16,6 +16,9 @@ namespace OGP.Client
 {
     internal class Program
     {
+        public static int roundId = -1;
+        public static bool gameOver = false;
+
         delegate void PrintChatMessage(string x);
         delegate void IngestGameStateView(GameStateView gameStateView);
 
@@ -77,6 +80,10 @@ namespace OGP.Client
             StateHandler stateHandler = new StateHandler((GameStateView gameStateView) =>
             {
                 mainForm.Invoke(new IngestGameStateView(mainForm.ApplyGameStateView), gameStateView);
+
+                roundId = gameStateView.RoundId;
+                gameOver = gameStateView.GameOver;
+                //save state to memory
             });
             stateHandler.SetOutManager(outManager);
             
@@ -111,30 +118,38 @@ namespace OGP.Client
                 bool replayingMoves = replayMoves.Count > 0;
                 bool sentThisTick = false;
 
+                //create new player on server 
+                outManager.SendCommand(new Command
+                {
+                    Type = Server.CommandType.Action,
+                    Args = new ClientSync
+                    {
+                        Pid = argsOptions.Pid
+                    }
+                }, OutManager.MASTER_SERVER);
+
                 while (true)
                 {
                     sentThisTick = false;
 
-                    /*if (replayingMoves && replayMoves.TryGetValue(tickId, out Direction nextMove))
+                    if (replayingMoves && replayMoves.TryGetValue(roundId, out Direction nextMove) && !gameOver)
                     {
-                        if (Enum.IsDefined(typeof(Direction), nextMove))
+                        
+                        outManager.SendCommand(new Command
                         {
-                            outManager.SendCommand(new Command
+                            Type = Server.CommandType.Action,
+                            Args = new GameMovement
                             {
-                                Type = Server.CommandType.Action,
-                                Args = new GameMovement
-                                {
-                                    Direction = nextMove
-                                }
-                            }, OutManager.MASTER_SERVER);
-
-                            sentThisTick = true;
-                        }
+                                Direction = nextMove
+                            }
+                        }, OutManager.MASTER_SERVER);
+                            
+                        sentThisTick = true;
                     }
                     else
                     {
                         // Get moves from keyboard, or send idle events regardless (only send moves when there is a direction change)
-                    }*/
+                    }
 
                     // TODO: send request for state to server, in case no keyboard input was made
                     if (!sentThisTick)

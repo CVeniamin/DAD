@@ -16,14 +16,16 @@ namespace OGP.Server
         private OutManager outManager;
         private GameState gameState;
         private int numPlayers;
-        
+
         private bool gameOn = false;
+        private Object dispatchDestinationLock = new Object();
 
         public ActionHandler(GameState gameState, int numPlayers)
         {
             stateDispatchDestinations = new HashSet<string>();
             this.gameState = gameState;
             this.numPlayers = numPlayers;
+            this.gameState.RoundId = -1;
         }
 
         public void Process(string source, object action)
@@ -64,12 +66,25 @@ namespace OGP.Server
                 gameState.AddServerIfNotExists(source);
             }
 
-            stateDispatchDestinations.Add(source);
+            lock (dispatchDestinationLock)
+            {
+                stateDispatchDestinations.Add(source);
+            }
         }
 
         internal void FinilizeTick(long tickId)
         {
             // Finish processing the tick, write state to file, etc.
+            // tell gamestate current roundId , everyone receive gamestate on his roundId
+            
+            /*if(!gameStarted){
+             *  roundId = tickId; 
+             *  gameState.RoundId = roundId;
+             * 
+                CheckIfGameReady();
+             }else{
+                DrawThings();
+             }*/
 
             MovePlayers(); // This will stop movement if player hits the wall
             // MoveGhosts(); // This will kill players
@@ -110,16 +125,19 @@ namespace OGP.Server
             }
 
             // Console.WriteLine("Notifying {0} recipients of current state", this.stateDispatchDestinations.Count);
-
-            foreach (string Url in this.stateDispatchDestinations)
+            lock (dispatchDestinationLock)
             {
-                outManager.SendCommand(new Command
+                foreach (string Url in this.stateDispatchDestinations)
                 {
-                    Type = CommandType.State,
-                    Args = gameState.GetGameStateView()
-                }, Url);
+                    outManager.SendCommand(new Command
+                    {
+                        Type = CommandType.State,
+                        Args = gameState.GetGameStateView()
+                    }, Url);
+                }
+                this.stateDispatchDestinations.Clear();
             }
-            this.stateDispatchDestinations.Clear();
+            
         }
         
         public void SetOutManager(OutManager outManager)
