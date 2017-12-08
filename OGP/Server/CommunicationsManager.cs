@@ -44,6 +44,8 @@ namespace OGP.Server
         private CommandQueue incomingCommandQueue;
         private Thread handlerThread;
 
+        private Object passLock = new Object();
+
         public InManager(string Url, ActionHandler actionHandler, ChatHandler chatHandler, StateHandler stateHandler)
         {
             Uri uri = new Uri(Url);
@@ -72,7 +74,10 @@ namespace OGP.Server
                     Command command;
                     while ((command = incomingCommandQueue.Dequeue()) != null)
                     {
-                        PassCommandToHandler(command);
+                        lock (passLock)
+                        {
+                            PassCommandToHandler(command);
+                        }
 
                         // Check if we got frozen in the mean time
                         if (frozen)
@@ -191,22 +196,26 @@ namespace OGP.Server
             string Url = null;
             if (destination == MASTER_SERVER)
             {
-                Url = this.masterServer;
+                Url = masterServer;
             }
             else if (destination == CLIENT_BROADCAST)
             {
+                Console.WriteLine("Got broadcast request");
                 foreach (Player player in gameState.Players)
                 {
+                    Console.WriteLine("Broadcasting to {0}", player.Url);
                     SendCommand(command, player.Url);
                 }
                 return true;
             }
-
+            
             // Fallback to passed destination
             if (Url == null || Url.Length == 0)
             {
                 Url = destination;
             }
+
+            Console.WriteLine("Accepting message to {0} for delivery {1}", destination, Url);
 
             // If still nothing - fail
             if (Url.Length == 0)
@@ -288,9 +297,15 @@ namespace OGP.Server
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine("Command to {0} got exception: {1}", Url, ex.ToString());
                     if (ex is IOException || ex is SocketException)
                     {
                         ReportOffline(Url);
+                    } else
+                    {
+# if DEBUG
+                        Console.WriteLine(ex);
+# endif
                     }
                 }
 

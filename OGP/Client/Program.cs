@@ -2,6 +2,7 @@
 using OGP.Server;
 using Sprache;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,8 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 using System.Windows.Forms;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace OGP.Client
 {
@@ -19,7 +22,8 @@ namespace OGP.Client
         public static int roundId = -1;
         public static bool gameOver = false;
 
-        delegate void PrintChatMessage(string x);
+        delegate void PrintChatMessage(string msg);
+        delegate void SetTitleLabel(string text); // TODO
         delegate void IngestGameStateView(GameStateView gameStateView);
 
         [STAThread]
@@ -65,9 +69,10 @@ namespace OGP.Client
             // Create OutManager - for sending messages out
             OutManager outManager = new OutManager(argsOptions.ClientUrl, existsingServersList, gameState);
 
-            MainFrame mainForm = new MainFrame(argsOptions.Pid, outManager);
+            MainFrame mainForm = new MainFrame(argsOptions, outManager);
+            IngestGameStateView gameStateViewIngest = new IngestGameStateView(mainForm.ApplyGameStateView);
 
-            // Create chat handler - for processing chat messages
+             // Create chat handler - for processing chat messages
             ChatHandler chatHandler = new ChatHandler((ChatMessage chatMessage) =>
             {
                 Console.WriteLine("Received chat message from {0}: {1}", chatMessage.Sender, chatMessage.Message);
@@ -79,11 +84,31 @@ namespace OGP.Client
             // Create state handler - for processing state updates (when slave)
             StateHandler stateHandler = new StateHandler((GameStateView gameStateView) =>
             {
-                mainForm.Invoke(new IngestGameStateView(mainForm.ApplyGameStateView), gameStateView);
+                Console.WriteLine("Got game state view for round {0} with {1} players", gameStateView.RoundId, gameStateView.Players.Count);
+                
+                try
+                {
+                    gameState.Patch(gameStateView);
+                }
+                catch (Exception ex)
+                {
+# if DEBUG
+                    Console.WriteLine("StateHandler patching interrupted by exception: " + ex.Message);
+# endif
+                }
 
-                roundId = gameStateView.RoundId;
-                gameOver = gameStateView.GameOver;
-                //save state to memory
+                try
+                {
+                    mainForm.Invoke(gameStateViewIngest, gameStateView);
+                }
+                catch (Exception ex)
+                {
+# if DEBUG
+                    Console.WriteLine("StateHandler drawing interrupted by exception: " + ex.Message);
+# endif
+                }
+
+                //save state to memory ?
             });
             stateHandler.SetOutManager(outManager);
             
@@ -91,7 +116,7 @@ namespace OGP.Client
             InManager inManager = new InManager(argsOptions.ClientUrl, null, chatHandler, stateHandler);
 
             // Begin client Timer
-            new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions)).Start();
+            new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions, gameState)).Start();
             
             Application.Run(mainForm);
             
@@ -111,7 +136,19 @@ namespace OGP.Client
             }
         }
 
-        private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions)
+        public static T DeepClone<T>(T obj)
+        {
+            using (var ms = new MemoryStream())
+            {
+                var formatter = new BinaryFormatter();
+                formatter.Serialize(ms, obj);
+                ms.Position = 0;
+
+                return (T)formatter.Deserialize(ms);
+            }
+        }
+        
+        private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions, GameState gameState)
         {
             {
                 int tickId = 0;
@@ -132,9 +169,9 @@ namespace OGP.Client
                 {
                     sentThisTick = false;
 
-                    Console.WriteLine("round Id at " + roundId);
+                    Console.WriteLine("Round ID = " + gameState.RoundId);
                     
-                    if (replayingMoves && replayMoves.TryGetValue(roundId, out Direction nextMove) && !gameOver)
+                    /*if (replayingMoves && replayMoves.TryGetValue(roundId, out Direction nextMove) && !gameOver)
                     {
                         
                         outManager.SendCommand(new Command
@@ -151,7 +188,7 @@ namespace OGP.Client
                     else
                     {
                         // Get moves from keyboard, or send idle events regardless (only send moves when there is a direction change)
-                    }
+                    }*/
 
                     // TODO: send request for state to server, in case no keyboard input was made
                     if (!sentThisTick)

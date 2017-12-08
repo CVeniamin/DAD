@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OGP.Middleware;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -9,7 +10,7 @@ namespace OGP.Server
     {
         public List<Player> Players;
         public List<Ghost> Ghosts;
-        public ConcurrentBag<Coin> Coins;
+        public List<Coin> Coins;
         public List<Wall> Walls;
         public List<Server> Servers;
         public bool GameOver;
@@ -18,24 +19,17 @@ namespace OGP.Server
 
     public class GameState
     {
-        private GameStateView cachedGameStateView = null;
-
         public List<Player> Players { get; private set; }
         public List<Ghost> Ghosts { get; private set; }
-        public ConcurrentBag<Coin> Coins { get; private set; }
+        public List<Coin> Coins { get; private set; }
         public List<Wall> Walls { get; private set; }
         public List<Server> Servers { get; private set; }
-
-        private bool gameStarted;
-        private bool gameOver;
-        public bool GameStarted { get => gameStarted; set => gameStarted = value; }
-        public bool GameOver { get => gameOver; set => gameOver = value; }
-        public int RoundId { get;  set; }
+        
+        public bool GameOver { get; set; }
+        public int RoundId { get; set; }
 
         public GameState(List<string> existsingServersList)
         {
-            this.GameStarted = false;
-
             Players = new List<Player>();
 
             InitGhosts();
@@ -51,39 +45,38 @@ namespace OGP.Server
 
             Ghost pink = new Ghost
             {
-                X = 200,
-                Y = 50,
-                Color = GhostColor.Pink,
-                Width = 35,
-                Height = 35
+                X = GameConstants.PINK_GHOST.STARTING_X,
+                Y = GameConstants.PINK_GHOST.STARTING_Y,
+                DX = GameConstants.PINK_GHOST.VELOCITY_X,
+                DY = GameConstants.PINK_GHOST.VELOCITY_Y,
+                Color = GhostColor.Pink
             };
+            Ghosts.Add(pink);
 
             Ghost yellow = new Ghost
             {
-                X = 200,
-                Y = 235,
-                Color = GhostColor.Yellow,
-                Width = 35,
-                Height = 35
+                X = GameConstants.YELLOW_GHOST.STARTING_X,
+                Y = GameConstants.YELLOW_GHOST.STARTING_Y,
+                DX = GameConstants.YELLOW_GHOST.VELOCITY_X,
+                DY = GameConstants.YELLOW_GHOST.VELOCITY_Y,
+                Color = GhostColor.Yellow
             };
+            Ghosts.Add(yellow);
 
             Ghost red = new Ghost
             {
-                X = 240,
-                Y = 90,
-                Color = GhostColor.Red,
-                Width = 35,
-                Height = 35
+                X = GameConstants.RED_GHOST.STARTING_X,
+                Y = GameConstants.RED_GHOST.STARTING_Y,
+                DX = GameConstants.RED_GHOST.VELOCITY_X,
+                DY = GameConstants.RED_GHOST.VELOCITY_Y,
+                Color = GhostColor.Red
             };
-
-            Ghosts.Add(pink);
-            Ghosts.Add(yellow);
             Ghosts.Add(red);
         }
 
         private void InitCoins()
         {
-            Coins = new ConcurrentBag<Coin>();
+            Coins = new List<Coin>();
 
             short totalCoins = 41;
 
@@ -104,8 +97,7 @@ namespace OGP.Server
                 {
                     X = x,
                     Y = y,
-                    Width = 15,
-                    Height = 15
+                    Visible = true
                 };
 
                 x += 60;
@@ -164,18 +156,8 @@ namespace OGP.Server
 
         internal GameStateView GetGameStateView()
         {
-            if (cachedGameStateView == null)
-            {
-                GenerateGameStateView();
-                return cachedGameStateView; // Return newly generated state
-            }
-
-            return cachedGameStateView; // Return null or cached game state
-        }
-
-        private void GenerateGameStateView()
-        {
-            cachedGameStateView = new GameStateView
+            Console.WriteLine("Returning new gameStateView");
+            return new GameStateView
             {
                 Players = Players,
                 Ghosts = Ghosts,
@@ -222,15 +204,20 @@ namespace OGP.Server
                     Url = Url,
                     Score = 0,
                     Alive = true,
-                    Width = 35,
-                    Height = 35
+                    Direction = Direction.RIGHT
                 });
             }
         }
 
-        internal void Patch(GameStateView newGameStateView)
+        public void Patch(GameStateView newGameStateView)
         {
-            // TODO: newGameState
+            Players = newGameStateView.Players;
+            Ghosts = newGameStateView.Ghosts;
+            Coins = newGameStateView.Coins;
+            Walls = newGameStateView.Walls;
+            Servers = newGameStateView.Servers;
+            RoundId = newGameStateView.RoundId;
+            GameOver = newGameStateView.GameOver;
         }
     }
 }

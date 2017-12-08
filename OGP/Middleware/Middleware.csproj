@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{0EC6AE55-B254-478B-AA71-21DA1288CB00}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Middleware</RootNamespace>
+    <RootNamespace>OGP.Middleware</RootNamespace>
     <AssemblyName>Middleware</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -38,8 +38,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IChatClient.cs" />
-    <Compile Include="IChatManager.cs" />
+    <Compile Include="ObjectProperties.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

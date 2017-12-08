@@ -61,9 +61,9 @@ namespace OGP.PuppetMaster
                 catch (ParseException ex)
                 {
                     Console.WriteLine("Wrong command or arguments.");
-#if DEBUG
+# if DEBUG
                     Console.WriteLine("Error: {0}", ex.Message);
-#endif
+# endif
                 }
 
                 Console.WriteLine();

@@ -1,7 +1,11 @@
-﻿using System;
+﻿using OGP.Middleware;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace OGP.Server
 {
@@ -18,15 +22,21 @@ namespace OGP.Server
         private GameState gameState;
         private int numPlayers;
 
-        private bool gameOn = false;
+        private long gameStartTickId = -1;
         private Object dispatchDestinationLock = new Object();
 
         public ActionHandler(GameState gameState, int numPlayers)
         {
             stateDispatchDestinations = new HashSet<string>();
+
             this.gameState = gameState;
             this.numPlayers = numPlayers;
             this.gameState.RoundId = -1;
+        }
+
+        public void SetOutManager(OutManager outManager)
+        {
+            this.outManager = outManager;
         }
 
         public void Process(string source, object action)
@@ -44,19 +54,19 @@ namespace OGP.Server
                     return;
                 }
 
-                if (gameOn)
+                if (gameStartTickId >= 0 && !gameState.GameOver)
                 {
                     player.Direction = movement.Direction;
                 }
                 else
                 {
-                    Console.WriteLine("Movement before game start ignored");
+                    Console.WriteLine("Out of round movement ignored");
                 }
             }
             else if (action is ClientSync sync)
             {
                 // State request from an idle client
-                if (!gameOn && gameState.Players.Count < numPlayers)
+                if (gameStartTickId == -1 && gameState.Players.Count < numPlayers)
                 {
                     gameState.AddPlayerIfNotExists(source, sync.Pid);
                 }
@@ -75,36 +85,144 @@ namespace OGP.Server
 
         internal void FinilizeTick(long tickId)
         {
-            // Finish processing the tick, write state to file, etc.
-            // tell gamestate current roundId , everyone receive gamestate on his roundId
+            if (gameStartTickId == -1)
+            {
+                if (gameState.Players.Count == 0)
+                {
+                    if (tickId % 4 == 0)
+                    {
+                        Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
+                        Console.Write("Waiting for players");
+                    }
+                    else
+                    {
+                        Console.Write(".");
+                    }
+                }
+
+                StartGameIfReady(tickId);
+            }
+            else if (gameState.GameOver)
+            {
+                Console.WriteLine("Game over");
+                // Stop state updates? Force clients to quit? Send special message? Or clients already know gameState.GameOver == true
+                // TODO
+            } else
+            {
+                gameState.RoundId = (int)(tickId - gameStartTickId);
+
+                Console.WriteLine("Processing round {0}", gameState.RoundId);
+
+                MovePlayers(); // This will stop movement if player hits the wall
+                MoveGhosts(); // This will kill players
+                CollectCoins(); // This will update player scores for alive players
+
+                CheckIfGameOver();
+                
+                WriteState(); // This should write the game state to file or standard output or something
+            }
             
-            /*if(!gameStarted){
-             *  roundId = tickId; 
-             *  gameState.RoundId = roundId;
-             * 
-                CheckIfGameReady();
-             }else{
-                DrawThings();
-             }*/
-
-            MovePlayers(); // This will stop movement if player hits the wall
-            MoveGhosts(); // This will kill players
-            CollectCoins(); // This will update player scores for alive players
-
-            //WriteState(); // This should write the game state to file or standard output or something
-
             DispatchState();
         }
 
-        private void WriteState()
+        private void StartGameIfReady(long tickId)
         {
-            //TODO
+            if (gameState.Players.Count >= numPlayers)
+            {
+                gameStartTickId = tickId;
+                gameState.RoundId = 0;
+
+                Console.WriteLine("Game started");
+            }
+        }
+
+        private void CheckIfGameOver()
+        {
+            int alivePlayers = 0;
+            foreach (Player player in gameState.Players)
+            {
+                if (player.Alive) {
+                    alivePlayers++;
+                }
+            }
+
+            if (alivePlayers == 0)
+            {
+                gameState.GameOver = true;
+                return;
+            }
+
+            int availableCoins = 0;
+            foreach (Coin coin in gameState.Coins)
+            {
+                if (coin.Visible)
+                {
+                    availableCoins++;
+                }
+            }
+
+            if (availableCoins == 0)
+            {
+                gameState.GameOver = true;
+                return;
+            }
+        }
+
+        private void MovePlayers()
+        {
+            foreach (Player player in gameState.Players)
+            {
+                if (!player.Alive)
+                {
+                    continue;
+                }
+
+                if (DetectPlayerWallCollision(player, gameState.Walls))
+                {
+                    player.Direction = Direction.NONE;
+                    continue;
+                }
+
+                switch (player.Direction)
+                {
+                    case Direction.UP:
+                        player.Y -= GameConstants.PLAYER_SPEED;
+                        break;
+                    case Direction.DOWN:
+                        player.Y += GameConstants.PLAYER_SPEED;
+                        break;
+                    case Direction.LEFT:
+                        player.X -= GameConstants.PLAYER_SPEED;
+                        break;
+                    case Direction.RIGHT:
+                        player.X += GameConstants.PLAYER_SPEED;
+                        break;
+                }
+            }
         }
 
         private void MoveGhosts()
         {
             foreach (Ghost ghost in gameState.Ghosts)
             {
+                // TODO: check if ghost will hit and obstacle if it completes the move
+                // New coordinate:
+                //ghost.X + ghost.DX
+                //ghost.Y + ghost.DY
+
+                /*if (willHitVerticalObstacle())
+                {
+                    ghost.DX = -ghost.DX;
+                }
+
+                if (willHitHorizontalObstacle())
+                {
+                    ghost.DY = -ghost.DY;
+                }*/
+
+                ghost.X += ghost.DX;
+                ghost.Y += ghost.DY;
+
                 foreach (Player player in gameState.Players)
                 {
                     if (DetectPlayerGhostCollision(player, ghost))
@@ -115,66 +233,50 @@ namespace OGP.Server
             }
         }
 
-        private void MovePlayers()
-        {
-            foreach (Player player in gameState.Players)
-            {
-                switch (player.Direction)
-                {
-                    case Direction.UP:
-                        player.Y--;
-                        break;
-                    case Direction.DOWN:
-                        player.Y++;
-                        break;
-                    case Direction.LEFT:
-                        player.X--;
-                        break;
-                    case Direction.RIGHT:
-                        player.X++;
-                        break;
-                }
-            }
-        }
-
         private void DispatchState()
         {
-            if (this.stateDispatchDestinations.Count == 0)
+            if (stateDispatchDestinations.Count == 0)
             {
                 return;
             }
-
-            // Console.WriteLine("Notifying {0} recipients of current state", this.stateDispatchDestinations.Count);
+            
             lock (dispatchDestinationLock)
             {
-                foreach (string Url in this.stateDispatchDestinations)
+                GameStateView gameStateView = gameState.GetGameStateView();
+
+# if DEBUG
+                Console.WriteLine("Notifying {0} recipients of current state (we have {0} players)", stateDispatchDestinations.Count, gameStateView.Players.Count);
+# endif
+
+                foreach (string Url in stateDispatchDestinations)
                 {
                     outManager.SendCommand(new Command
                     {
                         Type = CommandType.State,
-                        Args = gameState.GetGameStateView()
+                        Args = gameStateView
                     }, Url);
                 }
-                this.stateDispatchDestinations.Clear();
+                stateDispatchDestinations.Clear();
+
+                gameStateView = null;
             }
-            
-        }
-        
-        public void SetOutManager(OutManager outManager)
-        {
-            this.outManager = outManager;
         }
 
         private void CollectCoins()
         {
             foreach (Coin coin in gameState.Coins)
             {
+                if (!coin.Visible)
+                {
+                    continue;
+                }
+
                 foreach (Player player in gameState.Players)
                 {
-                    if (DetectPlayerCoinCollision(player, coin))
+                    if (player.Alive && DetectPlayerCoinCollision(player, coin))
                     {
                         player.Score++;
-                        gameState.Coins.TryTake(out Coin c);
+                        coin.Visible = false;
                         break;
                     }
                 }
@@ -183,48 +285,29 @@ namespace OGP.Server
 
         private bool DetectPlayerCoinCollision(Player player, Coin coin)
         {
-            if (player.X < coin.X + coin.Width
-                        && player.X + player.Width > coin.X
-                        && player.Y < coin.Y + coin.Height
-                        && player.Y + player.Height > coin.Y)
-            {
-                return true;
-            }
-            return false;
+            return (player.X < coin.X + ObjectDimensions.COIN_WIDTH
+                        && player.X + ObjectDimensions.PLAYER_WIDTH > coin.X
+                        && player.Y < coin.Y + ObjectDimensions.COIN_HEIGHT
+                        && player.Y + ObjectDimensions.PLAYER_HEIGHT > coin.Y);
         }
-
-        private bool DetectPlayerGhostCollision(Player player, Ghost ghost) {
-            if (player.X < ghost.X + ghost.Width
-                        && player.X + player.Width > ghost.X
-                        && player.Y < ghost.Y + ghost.Height
-                        && player.Y + player.Height > ghost.Y)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        private void MoveGhost()
+        
+        private bool DetectPlayerGhostCollision(Player player, Ghost ghost)
         {
-            foreach (Player player in gameState.Players)
-            {
-                switch (player.Direction)
-                {
-                    case Direction.UP:
-                        player.Y--;
-                        break;
-                    case Direction.DOWN:
-                        player.Y++;
-                        break;
-                    case Direction.LEFT:
-                        player.X--;
-                        break;
-                    case Direction.RIGHT:
-                        player.X++;
-                        break;
-                }
+            return (player.X < ghost.X + ObjectDimensions.GHOST_WIDTH
+                        && player.X + ObjectDimensions.PLAYER_WIDTH > ghost.X
+                        && player.Y < ghost.Y + ObjectDimensions.GHOST_HEIGHT
+                        && player.Y + ObjectDimensions.PLAYER_HEIGHT > ghost.Y);
+        }
 
-            }
+        private bool DetectPlayerWallCollision(Player player, List<Wall> walls)
+        {
+            // TODO
+            return false;
+        }
+
+        private void WriteState()
+        {
+            // TODO
         }
     }
 
@@ -240,7 +323,6 @@ namespace OGP.Server
 
         public void Process(string source, object args)
         {
-            // TODO: could do due diligence
             onChatMessage((ChatMessage)args);
         }
 
@@ -254,7 +336,8 @@ namespace OGP.Server
     {
         private OutManager outManager;
         private Action<GameStateView> onNewGameStateView;
-
+        private Object invokeLock = new Object();
+        
         public StateHandler(Action<GameStateView> onNewGameStateView)
         {
             this.onNewGameStateView = onNewGameStateView;
@@ -264,9 +347,13 @@ namespace OGP.Server
         {
             try
             {
-                onNewGameStateView((GameStateView)args);
+                onNewGameStateView?.Invoke((GameStateView)args);
             }
-            catch (ThreadInterruptedException) { }
+            catch (Exception ex) {
+# if DEBUG
+                Console.WriteLine("Process got exception: " + ex.Message);
+# endif
+            }
         }
 
         public void SetOutManager(OutManager outManager)
