@@ -305,25 +305,21 @@ namespace OGP.Client
             if (e.KeyCode == Keys.Left)
             {
                 SendDirection(Direction.LEFT);
-                //goleft = true;
                 //pacman.Image = Properties.Resources.Left;
             }
             if (e.KeyCode == Keys.Right)
             {
                 SendDirection(Direction.RIGHT);
-                //goright = true;
                 //pacman.Image = Properties.Resources.Right;
             }
             if (e.KeyCode == Keys.Up)
             {
                 SendDirection(Direction.UP);
-                //goup = true;
                 //pacman.Image = Properties.Resources.Up;
             }
             if (e.KeyCode == Keys.Down)
             {
                 SendDirection(Direction.DOWN);
-                //godown = true;
                 //pacman.Image = Properties.Resources.down;
             }
             if (e.KeyCode == Keys.Enter)
@@ -348,17 +344,20 @@ namespace OGP.Client
         {
             if (e.KeyCode == Keys.Enter)
             {
-                Console.WriteLine("Sending message {0}", tbMsg.Text);
-
-                outManager.SendCommand(new Command
+                e.SuppressKeyPress = true; //don't write anything to tbMsg
+                if (!String.IsNullOrWhiteSpace(tbMsg.Text))
                 {
-                    Type = Server.CommandType.Chat,
-                    Args = new ChatMessage
+                    Console.WriteLine("Sending message {0}", tbMsg.Text);
+                    outManager.SendCommand(new Command
                     {
-                        Sender = Pid,
-                        Message = tbMsg.Text
-                    }
-                }, OutManager.CLIENT_BROADCAST);
+                        Type = Server.CommandType.Chat,
+                        Args = new ChatMessage
+                        {
+                            Sender = Pid,
+                            Message = tbMsg.Text
+                        }
+                    }, OutManager.CLIENT_BROADCAST);
+                }
 
                 tbMsg.Clear();
                 tbMsg.Enabled = false;
@@ -368,7 +367,7 @@ namespace OGP.Client
 
         public void AppendMessageToChat(string message)
         {
-            tbChat.Text += "\r\n" + message;
+            tbChat.Text += message + "\r\n";
         }
 
         private void TbChat_MouseDown(object sender, MouseEventArgs e)

@@ -94,6 +94,10 @@ namespace OGP.Server
 
         internal void Enqueue(Command command)
         {
+            if(command.Args is ChatMessage chatMessage)
+            {
+                Console.WriteLine("Enqueing chat message" + chatMessage.Message.ToString());
+            }
             incomingCommandQueue.Enqueue(command);
             handlerThread.Interrupt();
         }
@@ -200,7 +204,7 @@ namespace OGP.Server
                 Console.WriteLine("Got broadcast request");
                 foreach (Player player in gameState.Players)
                 {
-                    Console.WriteLine("Broadcasting to {0}", player.Url);
+                    Console.WriteLine("Broadcasting to {0} : {1} ", player.Url, ((ChatMessage)command.Args).Message);
                     SendCommand(command, player.Url);
                 }
                 return true;
@@ -212,7 +216,7 @@ namespace OGP.Server
                 Url = destination;
             }
 
-            Console.WriteLine("Accepting message to {0} for delivery {1}", destination, Url);
+            //Console.WriteLine("Accepting message to {0} for delivery {1}", destination, Url);
 
             // If still nothing - fail
             if (Url.Length == 0)
@@ -223,7 +227,6 @@ namespace OGP.Server
             if (!outQueues.TryGetValue(Url, out CommandQueue commandQueue))
             {
                 commandQueue = new CommandQueue();
-                commandQueue.Enqueue(command);
                 outQueues.Add(Url, commandQueue);
             }
 
@@ -291,6 +294,10 @@ namespace OGP.Server
 
                 try
                 {
+                    if (command.Args is ChatMessage chatMessage)
+                    {
+                        Console.WriteLine("Emiting chat message" + chatMessage.Message.ToString());
+                    }
                     endpoint.Request(command);
                 }
                 catch (Exception ex)

@@ -71,15 +71,23 @@ namespace OGP.Client
             ChatHandler chatHandler = new ChatHandler((ChatMessage chatMessage) =>
             {
                 Console.WriteLine("Received chat message from {0}: {1}", chatMessage.Sender, chatMessage.Message);
-
-                mainForm.Invoke(new PrintChatMessage(mainForm.AppendMessageToChat), chatMessage.Message);
+                try
+                {
+                    mainForm.Invoke(new PrintChatMessage(mainForm.AppendMessageToChat), String.Format("{0} : {1} ", chatMessage.Sender, chatMessage.Message));
+                }
+                catch (ThreadInterruptedException ex)
+                {
+#if DEBUG
+                Console.WriteLine("ChatHandler drawing interrupted by exception: " + ex.Message);
+#endif
+                }
             });
             chatHandler.SetOutManager(outManager);
 
             // Create state handler - for processing state updates (when slave)
             StateHandler stateHandler = new StateHandler((GameStateView gameStateView) =>
             {
-                Console.WriteLine("Got game state view for round {0} with {1} players", gameStateView.RoundId, gameStateView.Players.Count);
+                //Console.WriteLine("Got game state view for round {0} with {1} players", gameStateView.RoundId, gameStateView.Players.Count);
 
                 try
                 {
@@ -113,11 +121,13 @@ namespace OGP.Client
             // Begin client Timer
             new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions, gameState)).Start();
 
-            Application.Run(mainForm);
+            new Thread(() => Application.Run(mainForm)).Start();
+            //Application.Run(mainForm);
 
             // Start listening for input
             while (true)
             {
+                Console.WriteLine("Submit a command ", "CRITICAL");
                 var input = Console.ReadLine();
 
                 if (input == null || input.Trim() == "Quit")
@@ -165,7 +175,7 @@ namespace OGP.Client
                 {
                     sentThisTick = false;
 
-                    Console.WriteLine("Round ID = " + gameState.RoundId);
+                    //Console.WriteLine("Round ID = " + gameState.RoundId);
 
                     /*if (replayingMoves && replayMoves.TryGetValue(roundId, out Direction nextMove) && !gameOver)
                     {

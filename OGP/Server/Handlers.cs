@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace OGP.Server
 {
@@ -73,11 +74,17 @@ namespace OGP.Server
                 // State request from a slave
                 gameState.AddServerIfNotExists(source);
             }
-
-            lock (dispatchDestinationLock)
+            try
             {
-                stateDispatchDestinations.Add(source);
+                lock (dispatchDestinationLock)
+                {
+                    stateDispatchDestinations.Add(source);
+                }
             }
+            catch (ThreadInterruptedException)
+            {
+            }
+            
         }
 
         internal void FinilizeTick(long tickId)
@@ -117,7 +124,7 @@ namespace OGP.Server
 
                 CheckIfGameOver();
 
-                //gameState.WriteState(gameState.RoundId); // This should write the game state to file or standard output or something
+                //gameState.WriteState(); // This should write the game state to file or standard output or something
             }
 
             DispatchState();
@@ -361,6 +368,7 @@ namespace OGP.Server
 
         public void Process(string source, object args)
         {
+            Console.WriteLine("Got message on ChatHandler from : " + source + ((ChatMessage)args).Message.ToString());
             onChatMessage((ChatMessage)args);
         }
 

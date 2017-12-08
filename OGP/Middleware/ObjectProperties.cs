@@ -30,8 +30,8 @@
         public static readonly GhostConstants PINK_GHOST = new GhostConstants
         {
             STARTING_X = 210,
-            STARTING_Y = 50,
-            VELOCITY_X = 3,
+            STARTING_Y = 120,
+            VELOCITY_X = 1,
             VELOCITY_Y = 2
         };
 
