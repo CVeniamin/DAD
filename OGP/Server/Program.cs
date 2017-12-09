@@ -36,8 +36,7 @@ namespace OGP.Server
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.SocketErrorCode + " " + ex.NativeErrorCode + " " + ex.Message + " " + ex.HelpLink);
-                Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.", "CRITICAL"); // TODO: Remove?
+                Console.WriteLine("Could not bind to port. Either already occupied or blocked by firewall. Exiting.");
                 throw new Exception("Socket not available");
             }
 

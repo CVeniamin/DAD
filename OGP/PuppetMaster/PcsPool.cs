@@ -45,7 +45,6 @@ namespace OGP.PuppetMaster
         internal static void LinkPid(string pid, string pcsUrl)
         {
             pidToLink.Remove(pid); // Prevent error for duplicate key
-            // TODO: UnlinkPid after Crash command is executed
             pidToLink.Add(pid, pcsUrl);
         }
 
