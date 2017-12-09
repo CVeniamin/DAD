@@ -103,10 +103,10 @@ namespace OGP.PCS
             if (launchSuccess == true)
             {
                 Console.WriteLine("Client Process ready ({0})", client.Id);
-                
+
                 processes.Remove(pid);
                 processes.Add(pid, client);
-                
+
                 return true;
             }
             else
@@ -138,7 +138,7 @@ namespace OGP.PCS
 
             return String.Empty;
         }
-        
+
         public void InjectDelay(string srcPid, string dstPid)
         {
             if (processes.TryGetValue(srcPid, out Process process))

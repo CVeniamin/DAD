@@ -1,7 +1,6 @@
 ﻿using OGP.Middleware;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 
 namespace OGP.Server
@@ -105,14 +104,14 @@ namespace OGP.Server
                     gameState.RoundId = (int)(tickId - gameStartTickId);
                     gameState.PreviousGames.Add(gameState.RoundId, gameState.WriteState());
                 }
-                
+
                 MovePlayers(); // This will stop movement if player hits the wall
                 MoveGhosts(); // This will kill players
                 CollectCoins(); // This will update player scores for alive players
 
                 CheckIfGameOver();
             }
-            
+
             DispatchState();
 
             currentTickId = tickId;
@@ -181,6 +180,7 @@ namespace OGP.Server
                     case Direction.UP:
                         DY = -GameConstants.PLAYER_SPEED;
                         break;
+
                     case Direction.DOWN:
                         DY = GameConstants.PLAYER_SPEED;
                         break;
@@ -218,7 +218,7 @@ namespace OGP.Server
                 {
                     ghost.DX = -ghost.DX;
                 }
-                
+
                 if (ghost.DY != 0 && (WillHitHorizontalBoardEdge(ghost.Y, ObjectDimensions.GHOST_HEIGHT) || WillHitWall(new BoundingBox
                 {
                     X1 = ghost.X,
@@ -229,7 +229,7 @@ namespace OGP.Server
                 {
                     ghost.DY = -ghost.DY;
                 }
-                
+
                 ghost.X += ghost.DX;
                 ghost.Y += ghost.DY;
 
@@ -283,10 +283,10 @@ namespace OGP.Server
                     return true;
                 }
             }
-            
+
             return false;
         }
-        
+
         private bool WillHitWall(BoundingBox boundingBox)
         {
             foreach (Wall wall in gameState.Walls)
@@ -309,16 +309,16 @@ namespace OGP.Server
         {
             return y < 0 || y + height > ObjectDimensions.BOARD_HEIGHT;
         }
-        
+
         private bool DetectPlayerCoinCollision(Player player, Coin coin)
         {
-            return (DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
+            return (DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT,
                                     coin.X, coin.Y, ObjectDimensions.COIN_WIDTH, ObjectDimensions.COIN_HEIGHT));
         }
 
         private bool DetectPlayerGhostCollision(Player player, Ghost ghost)
         {
-            return DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
+            return DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT,
                                    ghost.X, ghost.Y, ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT);
         }
 

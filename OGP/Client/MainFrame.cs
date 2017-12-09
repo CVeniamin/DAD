@@ -6,7 +6,6 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace OGP.Client
@@ -28,11 +27,11 @@ namespace OGP.Client
         private PictureBox[] wallPictureBoxes;
         private Dictionary<string, PictureBox> playerPictureBoxes;
         private bool pictureBoxesReady = false;
-        
+
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
-        
+
         public bool IgnoreKeyboard { get; set; }
 
         internal MainFrame(ArgsOptions argsOptions, OutManager outManager)
@@ -91,9 +90,9 @@ namespace OGP.Client
 
         internal void UpdateScore(GameStateView gameStateView)
         {
-            foreach(Player p in gameStateView.Players)
+            foreach (Player p in gameStateView.Players)
             {
-                if(p.PlayerId == this.Pid)
+                if (p.PlayerId == this.Pid)
                 {
                     this.score = p.Score;
 
@@ -102,7 +101,7 @@ namespace OGP.Client
                 }
             }
         }
-        
+
         private PictureBox CreateGhostPictureBox(Bitmap resource)
         {
             return new PictureBox
@@ -171,11 +170,12 @@ namespace OGP.Client
             {
                 LoadPictureBoxes(gameStateView);
             }
-            
+
             if (gameStateView.GameOver)
             {
                 GameStatusLabel.SetPropertyThreadSafe(() => this.GameStatusLabel.Text, "Game Over!");
-            } else if (gameStateView.RoundId >= 0)
+            }
+            else if (gameStateView.RoundId >= 0)
             {
                 GameStatusLabel.SetPropertyThreadSafe(() => this.GameStatusLabel.Text, "Game On!");
             }
@@ -347,13 +347,16 @@ namespace OGP.Client
             if (e.KeyCode == Keys.Left)
             {
                 SendDirection(Direction.LEFT);
-            } else if (e.KeyCode == Keys.Right)
+            }
+            else if (e.KeyCode == Keys.Right)
             {
                 SendDirection(Direction.RIGHT);
-            } else if (e.KeyCode == Keys.Up)
+            }
+            else if (e.KeyCode == Keys.Up)
             {
                 SendDirection(Direction.UP);
-            } else if (e.KeyCode == Keys.Down)
+            }
+            else if (e.KeyCode == Keys.Down)
             {
                 SendDirection(Direction.DOWN);
             }
@@ -424,6 +427,5 @@ namespace OGP.Client
         private void MainFrame_Load(object sender, EventArgs e)
         {
         }
-
     }
 }

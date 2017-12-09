@@ -1,7 +1,6 @@
 ﻿using OGP.Middleware;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 
 namespace OGP.Server
@@ -17,7 +16,6 @@ namespace OGP.Server
         public bool GameOver;
         public int RoundId;
         public Dictionary<int, string> PreviousGames;
-
     }
 
     public class GameState

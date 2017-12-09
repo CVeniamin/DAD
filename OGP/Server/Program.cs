@@ -91,12 +91,12 @@ namespace OGP.Server
                     tickId++;
                 }
             }).Start();
-            
+
             // Start listening for input
             while (true)
             {
                 var input = Console.ReadLine();
-                
+
                 if (input == null || input.Trim() == "Quit")
                 {
                     Console.WriteLine("Exit triggered by input");

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OGP.Middleware;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,7 +8,6 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Remoting;
 using System.Threading;
-using OGP.Middleware;
 
 namespace OGP.Server
 {
@@ -162,7 +162,7 @@ namespace OGP.Server
         private Dictionary<string, CommandQueue> outQueues;
         private HashSet<CommandQueue> activeQueues;
         private EndpointPool endpointPool;
-        
+
         private string masterServer;
         private string selfUrl;
 
@@ -182,7 +182,7 @@ namespace OGP.Server
             this.endpointPool = new EndpointPool();
 
             this.gameState = gameState;
-            
+
             this.selfUrl = selfUrl;
             this.masterServer = masterUrl;
 
@@ -211,7 +211,7 @@ namespace OGP.Server
             {
                 Url = destination;
             }
-            
+
             // If still nothing - fail
             if (Url.Length == 0)
             {
@@ -248,7 +248,7 @@ namespace OGP.Server
         {
             return masterServer;
         }
-        
+
         private void ProcessOutgoingCommands()
         {
             while (true)
@@ -289,7 +289,7 @@ namespace OGP.Server
             {
                 return;
             }
-            
+
             try
             {
                 endpointPool.GetByUrl(Url).Request(command);
@@ -323,7 +323,8 @@ namespace OGP.Server
                 {
                     Console.WriteLine("No active servers. Nowhere to go. Exiting.");
                     Process.GetCurrentProcess().Kill();
-                } else
+                }
+                else
                 {
                     FallbackToSlave();
                 }

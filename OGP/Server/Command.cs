@@ -35,7 +35,9 @@ namespace OGP.Server
                 if (winner != null)
                 {
                     globalStatus.AppendLine(String.Format("Game over. {0} won after {1} rounds", winner.PlayerId, gameState.RoundId));
-                } else {
+                }
+                else
+                {
                     globalStatus.AppendLine(String.Format("Game over after {0} rounds", gameState.RoundId));
                 }
             }

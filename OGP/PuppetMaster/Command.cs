@@ -236,7 +236,7 @@ namespace OGP.PuppetMaster
                     file.Write(localState);
                     file.Close();
                 }
-                
+
                 return String.Format("State written to {0}", filename);
             }
 

@@ -1,16 +1,15 @@
-﻿using OGP.Server;
+﻿using OGP.Middleware;
+using OGP.Server;
 using Sprache;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Windows.Forms;
-using OGP.Middleware;
-using System.Linq;
 
 namespace OGP.Client
 {
@@ -19,6 +18,7 @@ namespace OGP.Client
         private delegate void PrintChatMessage(string msg);
 
         private delegate void IngestGameStateView(GameStateView gameStateView);
+
         [STAThread]
         public static void Main(string[] args)
         {
@@ -39,7 +39,7 @@ namespace OGP.Client
             {
                 Console.WriteLine("Started Client with PID: " + argsOptions.Pid);
             }
-            
+
             // Create and register a remoting channel
             try
             {
@@ -114,7 +114,7 @@ namespace OGP.Client
             while (true)
             {
                 var input = Console.ReadLine();
-                
+
                 if (input == null || input.Trim() == "Quit")
                 {
                     Console.WriteLine("Exit triggered by input");
@@ -136,7 +136,7 @@ namespace OGP.Client
                 }
             }
         }
-        
+
         private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions,
             GameState gameState, MainFrame mainForm)
         {
@@ -162,7 +162,7 @@ namespace OGP.Client
                 while (true)
                 {
                     sentThisTick = false;
-                    
+
                     if (replayingMoves && replayMoves.TryGetValue(gameState.RoundId, out Direction nextMove) && !gameState.GameOver)
                     {
                         replayedMoves++;
@@ -177,7 +177,7 @@ namespace OGP.Client
                         }, OutManager.MASTER_SERVER);
 
                         sentThisTick = true;
-                        
+
                         if (replayedMoves >= totalMoves - 1 || gameState.RoundId >= maxRoundId)
                         {
                             replayingMoves = false;
@@ -186,7 +186,7 @@ namespace OGP.Client
                             mainForm.IgnoreKeyboard = false;
                         }
                     }
-                    
+
                     if (!sentThisTick)
                     {
                         outManager.SendCommand(new Command
