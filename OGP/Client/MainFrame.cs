@@ -28,14 +28,12 @@ namespace OGP.Client
         private PictureBox[] wallPictureBoxes;
         private Dictionary<string, PictureBox> playerPictureBoxes;
         private bool pictureBoxesReady = false;
-
-        private PictureBox player;
-        private PictureBox pacman = new PictureBox();
+        
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
-
-        private Object lockRoundId = new Object();
+        
+        public bool IgnoreKeyboard { get; set; }
 
         internal MainFrame(ArgsOptions argsOptions, OutManager outManager)
         {
@@ -45,6 +43,8 @@ namespace OGP.Client
             this.Pid = argsOptions.Pid;
             this.numPlayers = argsOptions.NumPlayers;
             this.outManager = outManager;
+
+            this.IgnoreKeyboard = false;
 
             GameStatusLabel.Visible = true;
             GameStatusLabel.Text = "Waiting for players...";
@@ -102,7 +102,7 @@ namespace OGP.Client
                 }
             }
         }
-
+        
         private PictureBox CreateGhostPictureBox(Bitmap resource)
         {
             return new PictureBox
@@ -240,6 +240,8 @@ namespace OGP.Client
 
         private void UpdatePlayers(GameStateView gameStateView)
         {
+            List<string> updatedPlayers = new List<string>();
+
             foreach (Player player in gameStateView.Players)
             {
                 if (!playerPictureBoxes.TryGetValue(player.PlayerId, out PictureBox pictureBox))
@@ -266,12 +268,13 @@ namespace OGP.Client
                 {
                     if (pictureBox.Tag == null || ((Direction)pictureBox.Tag) != player.Direction)
                     {
-                        Bitmap updatedBitmap = DirectionToResource(player.Direction);
+                        Direction direction = pictureBox.Tag == null ? Direction.RIGHT : player.Direction;
+                        Bitmap updatedBitmap = DirectionToResource(direction);
+
                         if (updatedBitmap != null)
                         {
-                            Console.WriteLine("Updating image!");
                             pictureBox.Image = updatedBitmap;
-                            pictureBox.Tag = player.Direction;
+                            pictureBox.Tag = direction;
                         }
                     }
 
@@ -280,6 +283,18 @@ namespace OGP.Client
                 else
                 {
                     pictureBox.Visible = false;
+                }
+
+                updatedPlayers.Add(player.PlayerId);
+            }
+
+            // Remove removed players
+            foreach (string playerId in playerPictureBoxes.Keys.Except(updatedPlayers).ToList())
+            {
+                if (playerPictureBoxes.TryGetValue(playerId, out PictureBox pictureBox))
+                {
+                    this.Controls.Remove(pictureBox);
+                    playerPictureBoxes.Remove(playerId);
                 }
             }
         }
@@ -323,6 +338,12 @@ namespace OGP.Client
 
         private void Keyisdown(object sender, KeyEventArgs e)
         {
+            if (IgnoreKeyboard)
+            {
+                e.SuppressKeyPress = true;
+                return;
+            }
+
             if (e.KeyCode == Keys.Left)
             {
                 SendDirection(Direction.LEFT);
@@ -366,7 +387,6 @@ namespace OGP.Client
                 e.SuppressKeyPress = true; //don't write anything to tbMsg
                 if (!String.IsNullOrWhiteSpace(tbMsg.Text))
                 {
-                    Console.WriteLine("Sending message {0}", tbMsg.Text);
                     outManager.SendCommand(new Command
                     {
                         Type = Server.CommandType.Chat,

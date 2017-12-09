@@ -40,8 +40,6 @@ namespace OGP.Server
 
         public void Process(string source, object action)
         {
-            //Console.WriteLine("Received Command from {0}", source);
-
             if (action is GameMovement movement)
             {
                 // Resolve player URL to Player object
@@ -56,7 +54,6 @@ namespace OGP.Server
                 if (gameStartTickId >= 0 && !gameState.GameOver)
                 {
                     player.Direction = movement.Direction;
-                    Console.WriteLine("DIRECTION {0} : {1}" , player.Direction, player.PlayerId);
                 }
                 else
                 {
@@ -88,28 +85,27 @@ namespace OGP.Server
             }
         }
 
-        internal void FinilizeTick(long tickId)
+        internal void FinalizeTick(long tickId)
         {
-            if (gameStartTickId == -1)
+            if (gameStartTickId == -1 && gameState.RoundId == -1)
             {
-                /*if (gameState.Players.Count == 0)
-                {
-                    Console.Write("\rWaiting for players");
-                }*/
-
                 StartGameIfReady(tickId);
             }
-            else if (gameState.GameOver)
+            else if (!gameState.GameOver)
             {
-                //Console.WriteLine("Game over");
-            }
-            else
-            {
-                gameState.RoundId = (int)(tickId - gameStartTickId);
+                if (gameStartTickId == -1)
+                {
+                    // We became master, but know of it only now
+                    Console.WriteLine("New master was born");
+                    gameStartTickId = tickId - gameState.RoundId - 1;
+                    gameState.RoundId++;
+                }
+                else
+                {
+                    gameState.RoundId = (int)(tickId - gameStartTickId);
+                    gameState.PreviousGames.Add(gameState.RoundId, gameState.WriteState());
+                }
                 
-                //Add this game to previous games, used later for LocalState command
-                gameState.PreviousGames.Add(gameState.RoundId, gameState.WriteState());
-
                 MovePlayers(); // This will stop movement if player hits the wall
                 MoveGhosts(); // This will kill players
                 CollectCoins(); // This will update player scores for alive players
@@ -146,7 +142,7 @@ namespace OGP.Server
 
             if (alivePlayers == 0)
             {
-                //Console.WriteLine("Game Over: everybody is dead");
+                Console.WriteLine("Game Over: everybody is dead");
                 gameState.GameOver = true;
                 return;
             }
@@ -162,7 +158,7 @@ namespace OGP.Server
 
             if (availableCoins == 0)
             {
-                //Console.WriteLine("Game Over: all coins collected");
+                Console.WriteLine("Game Over: all coins collected");
                 gameState.GameOver = true;
                 return;
             }
@@ -380,7 +376,6 @@ namespace OGP.Server
 
         public void Process(string source, object args)
         {
-            Console.WriteLine("Got message on ChatHandler from : " + source + ((ChatMessage)args).Message.ToString());
             onChatMessage((ChatMessage)args);
         }
 
@@ -410,7 +405,7 @@ namespace OGP.Server
             catch (Exception ex)
             {
 # if DEBUG
-                Console.WriteLine("Process got exception: " + ex.Message);
+                Console.WriteLine("Process got exception: " + ex.Message + ex.StackTrace);
 # endif
             }
         }

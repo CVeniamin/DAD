@@ -11,8 +11,8 @@
         public const int PLAYER_HEIGHT = 35;
         public const int PLAYER_WIDTH = 35;
 
-        public const int BOARD_WIDTH = 320;
-        public const int BOARD_HEIGHT = 320;
+        public const int BOARD_WIDTH = 360;
+        public const int BOARD_HEIGHT = 340;
     }
 
     public class GhostConstants

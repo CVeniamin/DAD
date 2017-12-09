@@ -59,8 +59,6 @@ namespace OGP.Server
 
             handlerThread = new Thread(ProcessIncomingMessages);
             handlerThread.Start();
-
-            Console.WriteLine("InManager Registered at " + Url);
         }
 
         private void ProcessIncomingMessages()
@@ -101,10 +99,6 @@ namespace OGP.Server
 
         internal void Enqueue(Command command)
         {
-            if(command.Args is ChatMessage chatMessage)
-            {
-                Console.WriteLine("Enqueing chat message " + chatMessage.Message.ToString());
-            }
             incomingCommandQueue.Enqueue(command);
             handlerThread.Interrupt();
         }
@@ -168,8 +162,7 @@ namespace OGP.Server
         private Dictionary<string, CommandQueue> outQueues;
         private HashSet<CommandQueue> activeQueues;
         private EndpointPool endpointPool;
-
-        private List<string> serverList;
+        
         private string masterServer;
         private string selfUrl;
 
@@ -177,11 +170,11 @@ namespace OGP.Server
         private Thread dispatchThread;
         private Object activeQueueLock = new Object();
 
-        public OutManager(string selfUrl, List<string> serverList, GameState gameState)
+        public OutManager(string selfUrl, string masterUrl, GameState gameState)
         {
-            if (serverList.Count == 0)
+            if (masterUrl == null)
             {
-                serverList.Add(selfUrl);
+                masterUrl = selfUrl;
             }
 
             this.outQueues = new Dictionary<string, CommandQueue>();
@@ -189,11 +182,9 @@ namespace OGP.Server
             this.endpointPool = new EndpointPool();
 
             this.gameState = gameState;
-
-            this.serverList = serverList;
-            masterServer = serverList[0];
-
+            
             this.selfUrl = selfUrl;
+            this.masterServer = masterUrl;
 
             dispatchThread = new Thread(ProcessOutgoingCommands);
             dispatchThread.Start();
@@ -210,7 +201,6 @@ namespace OGP.Server
             {
                 foreach (Player player in gameState.Players)
                 {
-                    Console.WriteLine("Broadcasting to {0} : {1} ", player.Url, ((ChatMessage)command.Args).Message);
                     SendCommand(command, player.Url);
                 }
                 return true;
@@ -221,9 +211,7 @@ namespace OGP.Server
             {
                 Url = destination;
             }
-
-            //Console.WriteLine("Accepting message to {0} for delivery {1}", destination, Url);
-
+            
             // If still nothing - fail
             if (Url.Length == 0)
             {
@@ -260,17 +248,7 @@ namespace OGP.Server
         {
             return masterServer;
         }
-
-        public void UpdateServerList(List<string> serverList)
-        {
-            this.serverList = serverList;
-            // Check if Master is still present
-            if (!this.serverList.Exists(x => string.Equals(x, this.masterServer, StringComparison.OrdinalIgnoreCase)))
-            {
-                FallbackToSlave();
-            }
-        }
-
+        
         private void ProcessOutgoingCommands()
         {
             while (true)
@@ -297,28 +275,39 @@ namespace OGP.Server
 
         private void EmitOutgoingCommands(CommandQueue commandQueue, string Url)
         {
-            Command command = commandQueue.Dequeue();
-            if (command != null)
+            Command command;
+            while ((command = commandQueue.Dequeue()) != null)
             {
                 command.Sender = this.selfUrl;
-                RemotingEndpoint endpoint = endpointPool.GetByUrl(Url);
+                DispatchOutgoingCommand(command, Url, 0);
+            }
+        }
 
-                try
+        private void DispatchOutgoingCommand(Command command, string Url, int dispatchAttempt)
+        {
+            if (dispatchAttempt > 5)
+            {
+                return;
+            }
+            
+            try
+            {
+                endpointPool.GetByUrl(Url).Request(command);
+            }
+            catch (Exception ex)
+            {
+                if (ex is IOException || ex is SocketException)
                 {
-                    endpoint.Request(command);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Command to {0} got exception: {1}", Url, ex.ToString());
-                    if (ex is IOException || ex is SocketException)
+                    Console.WriteLine("{0} detected as offline", Url);
+                    if (Url.Equals(masterServer))
                     {
                         ReportOffline(Url);
+                        // Attempt to redispatch to new master
+                        DispatchOutgoingCommand(command, masterServer, dispatchAttempt++);
                     }
                     else
                     {
-# if DEBUG
-                        Console.WriteLine(ex);
-# endif
+                        ReportOffline(Url);
                     }
                 }
             }
@@ -326,17 +315,21 @@ namespace OGP.Server
 
         private void ReportOffline(string Url)
         {
-            Process.GetCurrentProcess().Kill();
-
             if (Url.Equals(masterServer))
             {
-                FallbackToSlave();
+                gameState.Servers.RemoveAll(server => server.Url == masterServer);
+
+                if (gameState.Servers.Count == 0)
+                {
+                    Console.WriteLine("No active servers. Nowhere to go. Exiting.");
+                    Process.GetCurrentProcess().Kill();
+                } else
+                {
+                    FallbackToSlave();
+                }
             }
             else
             {
-                // TODO: not sure if this is needed, or do we keep on trying? (for example if client crashes)
-
-                // Remove client(s) and server(s) at that Url from local state
                 gameState.Players.RemoveAll(player => player.Url == Url);
                 gameState.Servers.RemoveAll(server => server.Url == Url);
             }
@@ -344,20 +337,7 @@ namespace OGP.Server
 
         private void FallbackToSlave()
         {
-            // TODO: Teodor?
-            // basically: select next best server, excluding master, from the list
-            // selection has to be idempotent - aka other clients/slaves will choose same server
-            // if no servers avaialble (only one master), then die?
-
-            //while (gameState.Servers.Count > 0)
-            //{
-            //Server server = gameState.Servers[0];
-
-            //}
-
-            // if (server.Url == )
-            // this.serverList.Sort();
-            // masterServer = serverList[0];
+            masterServer = gameState.Servers.OrderBy(server => server.Url).First().Url;
         }
     }
 

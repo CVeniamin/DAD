@@ -45,7 +45,7 @@ namespace OGP.Server
             GameState gameState = new GameState(existsingServersList);
 
             // Create OutManager - for sending messages out
-            OutManager outManager = new OutManager(argsOptions.ServerUrl, existsingServersList, gameState);
+            OutManager outManager = new OutManager(argsOptions.ServerUrl, existsingServersList.Count > 0 ? existsingServersList[0] : null, gameState);
 
             // Create action handler - for processing movements (when master)
             ActionHandler actionHandler = new ActionHandler(gameState, argsOptions.NumPlayers);
@@ -68,7 +68,19 @@ namespace OGP.Server
 
                 while (true)
                 {
-                    actionHandler.FinilizeTick(tickId);
+                    if (outManager.GetMasterServer() != argsOptions.ServerUrl)
+                    {
+                        // This is a slave
+                        outManager.SendCommand(new Command
+                        {
+                            Type = CommandType.Action
+                        }, OutManager.MASTER_SERVER);
+                    }
+                    else
+                    {
+                        // This is a master
+                        actionHandler.FinalizeTick(tickId);
+                    }
 
                     try
                     {

@@ -31,11 +31,13 @@ namespace OGP.Server
         public bool GameOver { get; set; }
         public int RoundId { get; set; }
 
-        public Dictionary<int, string> PreviousGames = new Dictionary<int, string>();
+        public Dictionary<int, string> PreviousGames;
 
         public GameState(List<string> existsingServersList)
         {
             Players = new List<Player>();
+            PreviousGames = new Dictionary<int, string>();
+            RoundId = -1;
 
             InitGhosts();
             InitCoins();
@@ -169,8 +171,7 @@ namespace OGP.Server
                 Walls = Walls,
                 Servers = Servers,
                 RoundId = RoundId,
-                GameOver = GameOver,
-                PreviousGames = PreviousGames
+                GameOver = GameOver
             };
         }
 
@@ -214,7 +215,7 @@ namespace OGP.Server
                     Url = Url,
                     Score = 0,
                     Alive = true,
-                    Direction = Direction.RIGHT
+                    Direction = Direction.NONE
                 });
             }
         }
@@ -228,31 +229,40 @@ namespace OGP.Server
             Servers = newGameStateView.Servers;
             RoundId = newGameStateView.RoundId;
             GameOver = newGameStateView.GameOver;
-            PreviousGames = newGameStateView.PreviousGames;
+
+            if (RoundId >= 0 && !PreviousGames.ContainsKey(RoundId))
+            {
+                PreviousGames.Add(RoundId, WriteState());
+            }
         }
 
         public String WriteState()
         {
             StringBuilder outputString = new StringBuilder();
+
             foreach (Ghost ghost in this.Ghosts)
             {
-                outputString.Append(String.Format("M, {0} , {1} \n", ghost.X, ghost.Y));
+                outputString.AppendLine(String.Format("M, {0}, {1}", ghost.X, ghost.Y));
             }
+
             foreach (Wall wall in this.Walls)
             {
-                outputString.Append(String.Format("W, {0} , {1} \n", wall.X, wall.Y));
+                outputString.AppendLine(String.Format("W, {0}, {1}", wall.X, wall.Y));
             }
+
             foreach (Player player in this.Players)
             {
-                outputString.Append(String.Format("{0}, {1},  {2} , {3} \n", player.PlayerId, player.Alive ? "P" : "L", player.X, player.Y));
+                outputString.AppendLine(String.Format("{0}, {1}, {2}, {3}", player.PlayerId, player.Alive ? "P" : "L", player.X, player.Y));
             }
+
             foreach (Coin coin in this.Coins)
             {
                 if (coin.Visible)
                 {
-                    outputString.Append(String.Format("C, {0} , {1} \n", coin.X, coin.Y));
+                    outputString.AppendLine(String.Format("C, {0}, {1}", coin.X, coin.Y));
                 }
             }
+
             return outputString.ToString();
         }
     }

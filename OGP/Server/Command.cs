@@ -13,28 +13,51 @@ namespace OGP.Server
     {
         public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
-            // if server and client are sync
-
             string masterServer = outManager.GetMasterServer();
+
             StringBuilder globalStatus = new StringBuilder();
 
+            if (gameState.RoundId == -1)
+            {
+                globalStatus.AppendLine(String.Format("Game waiting for players"));
+            }
+            else if (gameState.GameOver)
+            {
+                Player winner = null;
+                foreach (Player player in gameState.Players)
+                {
+                    if (player.Score > winner.Score)
+                    {
+                        winner = player;
+                    }
+                }
+
+                if (winner != null)
+                {
+                    globalStatus.AppendLine(String.Format("Game over. {0} won after {1} rounds", winner.PlayerId, gameState.RoundId));
+                } else {
+                    globalStatus.AppendLine(String.Format("Game over after {0} rounds", gameState.RoundId));
+                }
+            }
+            else
+            {
+                globalStatus.AppendLine(String.Format("Game live. Round {0}", gameState.RoundId));
+            }
+
+            globalStatus.AppendLine("Servers:");
             foreach (GameServer server in gameState.Servers)
             {
-                if(server.Url == masterServer)
-                {
-                    globalStatus.Append(String.Format("Master server at {0} \n", masterServer));
-                }
-                else
-                {
-                    globalStatus.Append(String.Format("Slave server at {0} \n", server.Url));
-                }
+                globalStatus.AppendLine(String.Format("{0} [{1}]", server.Url, server.Url == masterServer ? "MASTER" : "SLAVE"));
             }
-            globalStatus.Append(String.Format("Number of players {0} \n", gameState.Players.Count));
 
+            globalStatus.AppendLine("Players:");
+            globalStatus.AppendLine("PID\tScore\tAlive");
             foreach (Player player in gameState.Players)
             {
-                globalStatus.Append(String.Format("Clients with PID {0} in round {1} at {2} \n", player.PlayerId, gameState.RoundId, player.Url));
+                globalStatus.AppendLine(String.Format("{0}\t{1}\t{2}", player.PlayerId, player.Score, player.Alive));
             }
+
+            globalStatus.AppendLine(String.Format("# Players: {0}\n", gameState.Players.Count));
 
             return globalStatus.ToString();
         }

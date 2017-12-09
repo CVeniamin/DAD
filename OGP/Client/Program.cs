@@ -10,14 +10,12 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Windows.Forms;
 using OGP.Middleware;
+using System.Linq;
 
 namespace OGP.Client
 {
     internal class Program
     {
-        public static int roundId = -1;
-        public static bool gameOver = false;
-
         private delegate void PrintChatMessage(string msg);
 
         private delegate void IngestGameStateView(GameStateView gameStateView);
@@ -59,7 +57,7 @@ namespace OGP.Client
             GameState gameState = new GameState(existsingServersList);
 
             // Create OutManager - for sending messages out
-            OutManager outManager = new OutManager(argsOptions.ClientUrl, existsingServersList, gameState);
+            OutManager outManager = new OutManager(argsOptions.ClientUrl, existsingServersList.Count > 0 ? existsingServersList[0] : null, gameState);
 
             MainFrame mainForm = new MainFrame(argsOptions, outManager);
             IngestGameStateView gameStateViewIngest = new IngestGameStateView(mainForm.ApplyGameStateView);
@@ -102,7 +100,13 @@ namespace OGP.Client
             InManager inManager = new InManager(argsOptions.ClientUrl, null, chatHandler, stateHandler);
 
             // Begin client Timer
-            new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions, gameState)).Start();
+            new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions, gameState, mainForm)).Start();
+
+            if (replayMoves.Count > 0)
+            {
+                Console.WriteLine("Replaying moves from trace file. Keyboard events ignored.");
+                mainForm.IgnoreKeyboard = true;
+            }
 
             new Thread(() => Application.Run(mainForm)).Start();
 
@@ -133,34 +137,39 @@ namespace OGP.Client
             }
         }
         
-        private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions, GameState gameState)
+        private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions,
+            GameState gameState, MainFrame mainForm)
         {
             {
                 int tickId = 0;
-                bool replayingMoves = replayMoves.Count > 0;
                 bool sentThisTick = false;
 
                 //create new player on server
                 outManager.SendCommand(new Command
                 {
-                    Type = Server.CommandType.Action,
+                    Type = CommandType.Action,
                     Args = new ClientSync
                     {
                         Pid = argsOptions.Pid
                     }
                 }, OutManager.MASTER_SERVER);
 
+                int totalMoves = replayMoves.Count;
+                int replayedMoves = 0;
+                int maxRoundId = replayMoves.Keys.ToArray().Max();
+                bool replayingMoves = totalMoves > 0;
+
                 while (true)
                 {
                     sentThisTick = false;
-
-                    //Console.WriteLine("Round ID = " + gameState.RoundId);
-
-                    /*if (replayingMoves && replayMoves.TryGetValue(roundId, out Direction nextMove) && !gameOver)
+                    
+                    if (replayingMoves && replayMoves.TryGetValue(gameState.RoundId, out Direction nextMove) && !gameState.GameOver)
                     {
+                        replayedMoves++;
+
                         outManager.SendCommand(new Command
                         {
-                            Type = Server.CommandType.Action,
+                            Type = CommandType.Action,
                             Args = new GameMovement
                             {
                                 Direction = nextMove
@@ -168,18 +177,21 @@ namespace OGP.Client
                         }, OutManager.MASTER_SERVER);
 
                         sentThisTick = true;
-                    }
-                    else
-                    {
-                        // Get moves from keyboard, or send idle events regardless (only send moves when there is a direction change)
-                    }*/
+                        
+                        if (replayedMoves >= totalMoves - 1 || gameState.RoundId >= maxRoundId)
+                        {
+                            replayingMoves = false;
 
-                    // TODO: send request for state to server, in case no keyboard input was made
+                            Console.WriteLine("Trace file eneded. Keyboard events enabled.");
+                            mainForm.IgnoreKeyboard = false;
+                        }
+                    }
+                    
                     if (!sentThisTick)
                     {
                         outManager.SendCommand(new Command
                         {
-                            Type = Server.CommandType.Action,
+                            Type = CommandType.Action,
                             Args = new ClientSync
                             {
                                 Pid = argsOptions.Pid
