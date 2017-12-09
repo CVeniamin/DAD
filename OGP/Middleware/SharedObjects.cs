@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OGP.Server
+namespace OGP.Middleware
 {
     [Serializable]
     public enum Direction
@@ -50,9 +50,10 @@ namespace OGP.Server
     }
 
     [Serializable]
-    public class Server
+    public class GameServer
     {
         public string Url { get; set; }
+        public long LastAlive { get; set; }
     }
 
     [Serializable]
