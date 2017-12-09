@@ -124,6 +124,10 @@ namespace OGP.Server
                 gameStartTickId = tickId;
                 gameState.RoundId = 0;
 
+                Console.WriteLine("Preparing the game...");
+                DispatchState();
+                Thread.Sleep(2000);
+
                 Console.WriteLine("Game started");
             }
         }
