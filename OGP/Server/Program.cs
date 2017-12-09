@@ -23,13 +23,10 @@ namespace OGP.Server
             List<string> existsingServersList = argsOptions.ServerEndpoints != null ? (List<string>)argsOptions.ServerEndpoints : new List<string>();
             existsingServersList.Add(argsOptions.ServerUrl);
 
-            if (argsOptions.Pcs == true)
+            if (argsOptions.Pcs != true)
             {
-                Console.WriteLine("Suppressing output");
-                //Console.SetOut(new SuppressedWriter());
+                Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
             }
-
-            Console.WriteLine("Started Server with PID: " + argsOptions.Pid);
 
             // Create and register a remoting channel
             try
@@ -82,26 +79,30 @@ namespace OGP.Server
                     tickId++;
                 }
             }).Start();
-
+            
             // Start listening for input
             while (true)
             {
                 var input = Console.ReadLine();
-
+                
                 if (input == null || input.Trim() == "Quit")
                 {
-                    Console.WriteLine("Exit triggered by input", "CRITICAL");
+                    Console.WriteLine("Exit triggered by input");
                     break;
                 }
 
                 try
                 {
                     ICommand cmd = CommandParser.Command.Parse(input);
-                    Console.WriteLine(cmd.Exec(gameState, inManager, outManager));
+
+                    string result = cmd.Exec(gameState, inManager, outManager);
+                    if (result != String.Empty)
+                    {
+                        Console.Error.WriteLine(result);
+                    }
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Got exception on input thread");
                 }
             }
         }

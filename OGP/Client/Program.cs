@@ -37,14 +37,11 @@ namespace OGP.Client
             List<string> existsingServersList = argsOptions.ServerEndpoints != null ? (List<string>)argsOptions.ServerEndpoints : new List<string>();
             Dictionary<int, Direction> replayMoves = argsOptions.TraceFile != null ? LoadMoves(argsOptions.TraceFile) : new Dictionary<int, Direction>();
 
-            if (argsOptions.Pcs == true)
+            if (argsOptions.Pcs != true)
             {
-                Console.WriteLine("Suppressing output");
-                //Console.SetOut(new SuppressedWriter());
+                Console.WriteLine("Started Client with PID: " + argsOptions.Pid);
             }
-
-            Console.WriteLine("Started Client with PID: " + argsOptions.Pid);
-
+            
             // Create and register a remoting channel
             try
             {
@@ -70,16 +67,12 @@ namespace OGP.Client
             // Create chat handler - for processing chat messages
             ChatHandler chatHandler = new ChatHandler((ChatMessage chatMessage) =>
             {
-                Console.WriteLine("Received chat message from {0}: {1}", chatMessage.Sender, chatMessage.Message);
                 try
                 {
                     mainForm.Invoke(new PrintChatMessage(mainForm.AppendMessageToChat), String.Format("{0} : {1} ", chatMessage.Sender, chatMessage.Message));
                 }
-                catch (ThreadInterruptedException ex)
+                catch (ThreadInterruptedException)
                 {
-#if DEBUG
-                Console.WriteLine("ChatHandler drawing interrupted by exception: " + ex.Message);
-#endif
                 }
             });
             chatHandler.SetOutManager(outManager);
@@ -87,31 +80,21 @@ namespace OGP.Client
             // Create state handler - for processing state updates (when slave)
             StateHandler stateHandler = new StateHandler((GameStateView gameStateView) =>
             {
-                //Console.WriteLine("Got game state view for round {0} with {1} players", gameStateView.RoundId, gameStateView.Players.Count);
-
                 try
                 {
                     gameState.Patch(gameStateView);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-# if DEBUG
-                    Console.WriteLine("StateHandler patching interrupted by exception: " + ex.Message);
-# endif
                 }
 
                 try
                 {
                     mainForm.Invoke(gameStateViewIngest, gameStateView);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-# if DEBUG
-                    //Console.WriteLine("StateHandler drawing interrupted by exception: " + ex.Message);
-# endif
                 }
-
-                //save state to memory ?
             });
             stateHandler.SetOutManager(outManager);
 
@@ -122,18 +105,18 @@ namespace OGP.Client
             new Thread(() => ActionDispatcher(outManager, replayMoves, argsOptions, gameState)).Start();
 
             new Thread(() => Application.Run(mainForm)).Start();
-            //Application.Run(mainForm);
 
             // Start listening for input
             while (true)
             {
                 var input = Console.ReadLine();
-
+                
                 if (input == null || input.Trim() == "Quit")
                 {
-                    Console.WriteLine("Exit triggered by input", "CRITICAL");
+                    Console.WriteLine("Exit triggered by input");
                     break;
                 }
+
                 try
                 {
                     ICommand cmd = CommandParser.Command.Parse(input);
@@ -141,28 +124,15 @@ namespace OGP.Client
                     string result = cmd.Exec(gameState, inManager, outManager);
                     if (result != String.Empty)
                     {
-                        Console.WriteLine(result);
+                        Console.Error.WriteLine(result);
                     }
                 }
                 catch (Exception)
                 {
                 }
             }
-
         }
-
-        public static T DeepClone<T>(T obj)
-        {
-            using (var ms = new MemoryStream())
-            {
-                var formatter = new BinaryFormatter();
-                formatter.Serialize(ms, obj);
-                ms.Position = 0;
-
-                return (T)formatter.Deserialize(ms);
-            }
-        }
-
+        
         private static void ActionDispatcher(OutManager outManager, Dictionary<int, Direction> replayMoves, ArgsOptions argsOptions, GameState gameState)
         {
             {

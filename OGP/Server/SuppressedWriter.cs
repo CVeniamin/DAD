@@ -15,7 +15,7 @@ namespace OGP.Server
 
         public override void Write(string value)
         {
-            Console.Error.WriteLine(value);
+            // Console.Error.WriteLine(value);
         }
 
         public override void Write(string value, object arg0)
@@ -26,7 +26,7 @@ namespace OGP.Server
             }
             else
             {
-                Console.Error.WriteLine(value, arg0);
+                // Console.Error.WriteLine(value, arg0);
             }
         }
 

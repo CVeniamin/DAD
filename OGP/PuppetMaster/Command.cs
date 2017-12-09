@@ -1,6 +1,7 @@
 ﻿using OGP.PCS;
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace OGP.PuppetMaster
@@ -104,16 +105,19 @@ namespace OGP.PuppetMaster
 
         public string Exec()
         {
+            StringBuilder result = new StringBuilder();
+
             foreach (string pid in PcsPool.GetAllPids())
             {
                 PcsManager pcs = PcsPool.GetByPid(pid);
                 if (pcs != null)
                 {
-                    pcs.GlobalStatus(pid);
+                    string globalStatus = pcs.GlobalStatus(pid);
+                    result.Append(globalStatus);
                 }
             }
 
-            return String.Empty;
+            return result.ToString();
         }
     }
 
@@ -220,18 +224,20 @@ namespace OGP.PuppetMaster
             if (pcs != null)
             {
                 string localState = pcs.LocalState(pid, roundId);
-                StreamWriter file = new StreamWriter(String.Format("LocalState-{0}-{1}", pid, roundId))
+                string filename = String.Format("LocalState-{0}-{1}", pid, roundId);
+
+                StreamWriter file = new StreamWriter(filename)
                 {
                     AutoFlush = true,
                     NewLine = Environment.NewLine
                 };
                 using (file)
                 {
-                    file.WriteLine(localState);
+                    file.Write(localState);
                     file.Close();
                 }
                 
-                return localState;
+                return String.Format("State written to {0}", filename);
             }
 
             return String.Empty;

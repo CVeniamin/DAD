@@ -92,33 +92,21 @@ namespace OGP.Server
         {
             if (gameStartTickId == -1)
             {
-                if (gameState.Players.Count == 0)
+                /*if (gameState.Players.Count == 0)
                 {
-                    if (tickId % 4 == 0)
-                    {
-                        Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
-                        Console.Write("Waiting for players");
-                    }
-                    else
-                    {
-                        Console.Write(".");
-                    }
-                }
+                    Console.Write("\rWaiting for players");
+                }*/
 
                 StartGameIfReady(tickId);
             }
             else if (gameState.GameOver)
             {
-                Console.WriteLine("Game over");
-                // Stop state updates? Force clients to quit? Send special message? Or clients already know gameState.GameOver == true
-                // TODO
+                //Console.WriteLine("Game over");
             }
             else
             {
                 gameState.RoundId = (int)(tickId - gameStartTickId);
-
-                //Console.WriteLine("Processing round {0}", gameState.RoundId);
-
+                
                 //Add this game to previous games, used later for LocalState command
                 gameState.PreviousGames.Add(gameState.RoundId, gameState.WriteState());
 
@@ -158,7 +146,7 @@ namespace OGP.Server
 
             if (alivePlayers == 0)
             {
-                Console.WriteLine("Game Over: everybody is dead");
+                //Console.WriteLine("Game Over: everybody is dead");
                 gameState.GameOver = true;
                 return;
             }
@@ -174,7 +162,7 @@ namespace OGP.Server
 
             if (availableCoins == 0)
             {
-                Console.WriteLine("Game Over: all coins collected");
+                //Console.WriteLine("Game Over: all coins collected");
                 gameState.GameOver = true;
                 return;
             }
@@ -212,7 +200,6 @@ namespace OGP.Server
 
                 if (PlayerHitsObstacle(player, DX, DY))
                 {
-                    Console.WriteLine("stopped {0}", player.PlayerId);
                     continue;
                 }
 
@@ -233,7 +220,6 @@ namespace OGP.Server
                     Y2 = ghost.Y + ObjectDimensions.GHOST_HEIGHT
                 })))
                 {
-                    Console.WriteLine("Ghost {0} inverting X", ghost.Color);
                     ghost.DX = -ghost.DX;
                 }
                 
@@ -245,7 +231,6 @@ namespace OGP.Server
                     Y2 = ghost.Y + ghost.DY + ObjectDimensions.GHOST_HEIGHT
                 })))
                 {
-                    Console.WriteLine("Ghost {0} inverting Y", ghost.Color);
                     ghost.DY = -ghost.DY;
                 }
                 

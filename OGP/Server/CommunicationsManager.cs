@@ -374,8 +374,7 @@ namespace OGP.Server
 
         internal void SetDelay(int delay)
         {
-            // TODO
-            throw new NotImplementedException();
+            this.delay = delay;
         }
 
         internal void Enqueue(Command command)

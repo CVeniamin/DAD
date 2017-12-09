@@ -171,21 +171,22 @@ namespace OGP.Client
             {
                 LoadPictureBoxes(gameStateView);
             }
-
-            if(gameStateView.RoundId > 0)
+            
+            if (gameStateView.GameOver)
+            {
+                GameStatusLabel.SetPropertyThreadSafe(() => this.GameStatusLabel.Text, "Game Over!");
+            } else if (gameStateView.RoundId >= 0)
             {
                 GameStatusLabel.SetPropertyThreadSafe(() => this.GameStatusLabel.Text, "Game On!");
             }
 
-            if (gameStateView.GameOver)
+            if (!gameStateView.GameOver)
             {
-                GameStatusLabel.SetPropertyThreadSafe(() => this.GameStatusLabel.Text, "Game Over!");
+                //UpdateScore(gameStateView);
+                UpdateCoins(gameStateView);
+                UpdateGhosts(gameStateView);
+                UpdatePlayers(gameStateView);
             }
-
-            //UpdateScore(gameStateView);
-            UpdateCoins(gameStateView);
-            UpdateGhosts(gameStateView);
-            UpdatePlayers(gameStateView);
         }
 
         private PictureBox DrawElement(string ghostname, string tag, Bitmap resource, int x, int y, Size size)
@@ -244,11 +245,9 @@ namespace OGP.Client
                 if (!playerPictureBoxes.TryGetValue(player.PlayerId, out PictureBox pictureBox))
                 {
                     pictureBox = CreatePlayerPictureBox();
+
                     InitializeDrawing(pictureBox);
-                    if(player.PlayerId == Pid)
-                    {
-                        this.pacman = pictureBox;
-                    }
+
                     playerPictureBoxes.Add(player.PlayerId, pictureBox);
                 }
 
@@ -265,10 +264,15 @@ namespace OGP.Client
 
                 if (player.Alive)
                 {
-                    Bitmap updatedBitmap = DirectionToResource(player.Direction);
-                    if (updatedBitmap != null && pictureBox.Image != updatedBitmap)
+                    if (pictureBox.Tag == null || ((Direction)pictureBox.Tag) != player.Direction)
                     {
-                        pictureBox.Image = updatedBitmap;
+                        Bitmap updatedBitmap = DirectionToResource(player.Direction);
+                        if (updatedBitmap != null)
+                        {
+                            Console.WriteLine("Updating image!");
+                            pictureBox.Image = updatedBitmap;
+                            pictureBox.Tag = player.Direction;
+                        }
                     }
 
                     pictureBox.Location = new Point(player.X, player.Y);
@@ -304,7 +308,6 @@ namespace OGP.Client
         {
             if (direction != lastSentDirection)
             {
-                Console.WriteLine("SEND NEW DIRECTION!");
                 lastSentDirection = direction;
 
                 outManager.SendCommand(new Command
@@ -323,26 +326,24 @@ namespace OGP.Client
             if (e.KeyCode == Keys.Left)
             {
                 SendDirection(Direction.LEFT);
-                //pacman.Image = Properties.Resources.Left;
-            }
-            if (e.KeyCode == Keys.Right)
+            } else if (e.KeyCode == Keys.Right)
             {
                 SendDirection(Direction.RIGHT);
-                //pacman.Image = Properties.Resources.Right;
-            }
-            if (e.KeyCode == Keys.Up)
+            } else if (e.KeyCode == Keys.Up)
             {
                 SendDirection(Direction.UP);
-                //pacman.Image = Properties.Resources.Up;
-            }
-            if (e.KeyCode == Keys.Down)
+            } else if (e.KeyCode == Keys.Down)
             {
                 SendDirection(Direction.DOWN);
-                //pacman.Image = Properties.Resources.down;
             }
-            if (e.KeyCode == Keys.Enter)
+            else if (e.KeyCode == Keys.Space)
             {
-                tbMsg.Enabled = true; tbMsg.Focus();
+                SendDirection(Direction.NONE);
+            }
+            else if (e.KeyCode == Keys.Enter)
+            {
+                tbMsg.Enabled = true;
+                tbMsg.Focus();
             }
         }
 
