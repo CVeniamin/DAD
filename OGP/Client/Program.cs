@@ -133,15 +133,21 @@ namespace OGP.Client
                     Console.WriteLine("Exit triggered by input", "CRITICAL");
                     break;
                 }
-                ICommand cmd = CommandParser.Command.Parse(input);
-                string result = cmd.Exec(gameState, inManager, outManager);
-
-                // TODO: debug gameState here is different from gameState from StateHandler
-                if(result != String.Empty)
+                try
                 {
-                    Console.WriteLine(result);
+                    ICommand cmd = CommandParser.Command.Parse(input);
+
+                    string result = cmd.Exec(gameState, inManager, outManager);
+                    if (result != String.Empty)
+                    {
+                        Console.WriteLine(result);
+                    }
+                }
+                catch (Exception)
+                {
                 }
             }
+
         }
 
         public static T DeepClone<T>(T obj)

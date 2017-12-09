@@ -12,22 +12,30 @@ namespace OGP.Server
     {
         public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
-            // print if master server
-            //print number of clients
-            // print roundId for server and client
             // if server and client are sync
 
             string masterServer = outManager.GetMasterServer();
-            StringBuilder output = new StringBuilder();
+            StringBuilder globalStatus = new StringBuilder();
 
             foreach (Server server in gameState.Servers)
             {
                 if(server.Url == masterServer)
                 {
-                    output.Append(String.Format("Master server at {0}", masterServer));
+                    globalStatus.Append(String.Format("Master server at {0} \n", masterServer));
+                }
+                else
+                {
+                    globalStatus.Append(String.Format("Slave server at {0} \n", server.Url));
                 }
             }
-            return String.Empty;
+            globalStatus.Append(String.Format("Number of players {0} \n", gameState.Players.Count));
+
+            foreach (Player player in gameState.Players)
+            {
+                globalStatus.Append(String.Format("Clients with PID {0} in round {1} at {2} \n", player.PlayerId, gameState.RoundId, player.Url));
+            }
+
+            return globalStatus.ToString();
         }
     }
 
@@ -56,7 +64,6 @@ namespace OGP.Server
 
         public InjectDelay(string dstPid)
         {
-            // TODO
             this.dstPid = dstPid;
         }
 

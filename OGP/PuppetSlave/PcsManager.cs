@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace OGP.PCS
@@ -8,10 +10,12 @@ namespace OGP.PCS
     public class PcsManager : MarshalByRefObject
     {
         private Dictionary<string, Process> processes = null;
+        private Dictionary<string, StreamWriter> streamWriters = null;
 
         public PcsManager()
         {
             processes = new Dictionary<string, Process>();
+            streamWriters = new Dictionary<string, StreamWriter>();
         }
 
         private bool WaitForProcess(Process proc)
@@ -50,17 +54,17 @@ namespace OGP.PCS
 
             Console.WriteLine("Starting Server with args: " + args);
             //use this way of starting Server.exe
-            Process server = Process.Start("Server.exe", args);
-            
+            //Process server = Process.Start("Server.exe", args);
+
             // or use this way
-            //Process server = new Process();
-            
-            //server.StartInfo.FileName = "Server.exe";
-            //server.StartInfo.Arguments = args;
-            //server.StartInfo.UseShellExecute = false;
+            Process server = new Process();
+
+            server.StartInfo.FileName = "Server.exe";
+            server.StartInfo.Arguments = args;
+            server.StartInfo.UseShellExecute = false;
             //server.StartInfo.RedirectStandardOutput = true;
-            //server.StartInfo.RedirectStandardInput = true;
-            //server.Start();
+            server.StartInfo.RedirectStandardInput = true;
+            server.Start();
 
             bool launchSuccess = WaitForProcess(server);
 
@@ -68,6 +72,7 @@ namespace OGP.PCS
             {
                 Console.WriteLine("Server Process ready ({0})", server.Id);
                 processes.Add(pid, server);
+                streamWriters.Add(pid, server.StandardInput);
 
                 return true;
             }
@@ -107,9 +112,18 @@ namespace OGP.PCS
             {
                 Console.WriteLine("Client Process ready ({0})", client.Id);
 
-                processes.Remove(pid); // Prevent error for duplicate key
+                //processes.Remove(pid); // Prevent error for duplicate key
                 // TODO: detect child process crash and remove from process list
-                processes.Add(pid, client);
+
+                if (!processes.TryGetValue(pid, out Process p))
+                {
+                    processes.Add(pid, client);
+                }
+
+                if (!streamWriters.TryGetValue(pid, out StreamWriter sw))
+                {
+                    streamWriters.Add(pid, client.StandardInput);
+                }
 
                 return true;
             }
@@ -130,7 +144,7 @@ namespace OGP.PCS
                 process.StandardInput.WriteLine("GlobalStatus");
 
                 string line;
-
+                process.BeginOutputReadLine();
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
                     Console.WriteLine(line);
@@ -138,33 +152,45 @@ namespace OGP.PCS
             }
         }
 
+        private StringBuilder output = null;
         public string LocalState(string pid, int roundId)
         {
+            // TODO: check if this while returns something since client continuously will sends stuff to console and will never return.
             if (processes.TryGetValue(pid, out Process process))
             {
                 Console.WriteLine("Requesting local state from " + pid);
 
-                process.StandardInput.WriteLine("LocalState " + roundId);
-
-                string line;
-                string output = "";
-
-                // TODO: check if this while returns something since client continuously will sends stuff to console and will never return.
-                while ((line = process.StandardOutput.ReadLine()) != null)
+                //process.StandardInput.WriteLine("LocalState " + roundId);
+                if (streamWriters.TryGetValue(pid, out StreamWriter streamWriter))
                 {
-                    if (line == String.Empty)
-                    {
-                        return output;
-                    }
-                    else
-                    {
-                        output += line + "\n";
-                    }
+                    //process.StandardInput.WriteLine("LocalState " + roundId);
+                    streamWriter.WriteLine("LocalState " + roundId);
+                    streamWriter.Close();
                 }
-                return output;
-            }
 
+                output = new StringBuilder();
+
+                process.OutputDataReceived += new DataReceivedEventHandler(SortOutputHandler);
+                process.BeginOutputReadLine();
+
+                Console.WriteLine("Before wait for exit!");
+
+                //process.WaitForExit();
+                //process.Close();
+                return output.ToString();
+            }
             return String.Empty;
+        }
+
+        private void SortOutputHandler(object sendingProcess,
+            DataReceivedEventArgs outLine)
+        {
+            // Collect the sort command output.
+            if (!String.IsNullOrEmpty(outLine.Data))
+            {
+                //output.Append(outLine.Data);
+                Console.WriteLine(outLine.Data);
+            }
         }
 
         public void InjectDelay(string srcPid, string dstPid)

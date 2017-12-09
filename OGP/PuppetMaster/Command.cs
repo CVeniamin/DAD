@@ -104,7 +104,6 @@ namespace OGP.PuppetMaster
 
         public string Exec()
         {
-            // TODO
             foreach (string pid in PcsPool.GetAllPids())
             {
                 PcsManager pcs = PcsPool.GetByPid(pid);
@@ -220,11 +219,18 @@ namespace OGP.PuppetMaster
             PcsManager pcs = PcsPool.GetByPid(pid);
             if (pcs != null)
             {
-                string localState = pcs.LocalState(pid, roundId); 
-                using (StreamWriter file = new StreamWriter(String.Format("LocalState-{0}-{1}", pid, roundId)))
+                string localState = pcs.LocalState(pid, roundId);
+                StreamWriter file = new StreamWriter(String.Format("LocalState-{0}-{1}", pid, roundId))
+                {
+                    AutoFlush = true,
+                    NewLine = Environment.NewLine
+                };
+                using (file)
                 {
                     file.WriteLine(localState);
+                    file.Close();
                 }
+                
                 return localState;
             }
 

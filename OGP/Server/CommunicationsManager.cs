@@ -373,6 +373,7 @@ namespace OGP.Server
 
         internal void SetDelay(int delay)
         {
+            // TODO
             throw new NotImplementedException();
         }
 
