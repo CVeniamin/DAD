@@ -224,9 +224,13 @@ namespace OGP.PuppetMaster
             if (pcs != null)
             {
                 string localState = pcs.LocalState(pid, roundId);
+                string filePath = "../OGP/PuppetMaster/bin/Debug/LocalState/";
                 string filename = String.Format("LocalState-{0}-{1}", pid, roundId);
 
-                StreamWriter file = new StreamWriter(filename)
+                string directory = Path.Combine(System.Environment.CurrentDirectory, filePath);
+                Directory.CreateDirectory(directory);
+
+                StreamWriter file = new StreamWriter(directory + filename)
                 {
                     AutoFlush = true,
                     NewLine = Environment.NewLine
@@ -236,8 +240,8 @@ namespace OGP.PuppetMaster
                     file.Write(localState);
                     file.Close();
                 }
-
-                return String.Format("State written to {0}", filename);
+                Console.WriteLine(String.Format("State written to {0}", filename));
+                return localState;
             }
 
             return String.Empty;
