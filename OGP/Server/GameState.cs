@@ -120,7 +120,7 @@ namespace OGP.Server
             {
                 X = 110,
                 Y = 50,
-                Width = 15,
+                Width = 10,
                 Height = 80
             };
 
@@ -128,8 +128,8 @@ namespace OGP.Server
             {
                 X = 280,
                 Y = 50,
-                Width = 20,
-                Height = 60
+                Width = 15,
+                Height = 45
             };
 
             Wall w3 = new Wall
@@ -137,15 +137,15 @@ namespace OGP.Server
                 X = 110,
                 Y = 245,
                 Width = 15,
-                Height = 80
+                Height = 90
             };
 
             Wall w4 = new Wall
             {
                 X = 300,
                 Y = 245,
-                Width = 20,
-                Height = 60,
+                Width = 15,
+                Height = 40,
             };
 
             Walls.Add(w1);
@@ -161,7 +161,7 @@ namespace OGP.Server
 
         internal GameStateView GetGameStateView()
         {
-            Console.WriteLine("Returning new gameStateView");
+            //Console.WriteLine("Returning new gameStateView");
             return new GameStateView
             {
                 Players = Players,

@@ -18,7 +18,7 @@ namespace OGP.Client
         private OutManager outManager;
         private int score;
 
-        private Direction lastSentDirection;
+        private Direction lastSentDirection = Direction.NONE;
 
         private Size coinSize;
         private Size ghostSize;
@@ -30,7 +30,7 @@ namespace OGP.Client
         private bool pictureBoxesReady = false;
 
         private PictureBox player;
-        private PictureBox pacman;
+        private PictureBox pacman = new PictureBox();
         private PictureBox redGhost;
         private PictureBox yellowGhost;
         private PictureBox pinkGhost;
@@ -46,8 +46,8 @@ namespace OGP.Client
             this.numPlayers = argsOptions.NumPlayers;
             this.outManager = outManager;
 
-            label2.Visible = true;
-            label2.Text = "Waiting for players...";
+            GameStatusLabel.Visible = true;
+            GameStatusLabel.Text = "Waiting for players...";
         }
 
         private void PrepareCommonUIObjects()
@@ -97,8 +97,8 @@ namespace OGP.Client
                 {
                     this.score = p.Score;
 
-                    //ScoreLabel.SetPropertyThreadSafe(() => ScoreLabel.Text, "Score: " + score.ToString());
-                    ScoreLabel.Text = "Player " + this.Pid + " Score: " + score.ToString();
+                    ScoreLabel.SetPropertyThreadSafe(() => ScoreLabel.Text, "Score: " + score.ToString());
+                    //ScoreLabel.Text = "Player " + this.Pid + " Score: " + score.ToString();
                 }
             }
         }
@@ -170,6 +170,16 @@ namespace OGP.Client
             if (!pictureBoxesReady)
             {
                 LoadPictureBoxes(gameStateView);
+            }
+
+            if(gameStateView.RoundId > 0)
+            {
+                GameStatusLabel.SetPropertyThreadSafe(() => this.GameStatusLabel.Text, "Game On!");
+            }
+
+            if (gameStateView.GameOver)
+            {
+                GameStatusLabel.SetPropertyThreadSafe(() => this.GameStatusLabel.Text, "Game Over!");
             }
 
             //UpdateScore(gameStateView);
@@ -245,7 +255,7 @@ namespace OGP.Client
                 // Update Player Score
                 if (player.PlayerId == this.Pid)
                 {
-                    ScoreLabel.Text = "Player " + this.Pid + " Score: " + player.Score.ToString();
+                    ScoreLabel.SetPropertyThreadSafe(() => ScoreLabel.Text, String.Format("Player {0} Score: {1}", Pid, player.Score.ToString()));
                 }
 
                 if (player.Alive)
@@ -261,6 +271,7 @@ namespace OGP.Client
                 else
                 {
                     pictureBox.Visible = false;
+                    GameStatusLabel.SetPropertyThreadSafe(() => GameStatusLabel.Text, "Game Over!");
                 }
             }
         }
@@ -289,6 +300,9 @@ namespace OGP.Client
         {
             if (direction != lastSentDirection)
             {
+                Console.WriteLine("SEND NEW DIRECTION!");
+                lastSentDirection = direction;
+
                 outManager.SendCommand(new Command
                 {
                     Type = Server.CommandType.Action,
@@ -367,7 +381,7 @@ namespace OGP.Client
 
         public void AppendMessageToChat(string message)
         {
-            tbChat.Text += message + "\r\n";
+            tbChat.SetPropertyThreadSafe(() => this.tbChat.Text, this.tbChat.Text += message + "\r\n");
         }
 
         private void TbChat_MouseDown(object sender, MouseEventArgs e)
@@ -385,5 +399,6 @@ namespace OGP.Client
         private void MainFrame_Load(object sender, EventArgs e)
         {
         }
+
     }
 }

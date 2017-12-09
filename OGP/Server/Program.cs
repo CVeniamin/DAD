@@ -97,7 +97,7 @@ namespace OGP.Server
                 try
                 {
                     ICommand cmd = CommandParser.Command.Parse(input);
-                    Console.WriteLine(cmd.Exec(gameState));
+                    Console.WriteLine(cmd.Exec(gameState, inManager, outManager));
                 }
                 catch (Exception)
                 {

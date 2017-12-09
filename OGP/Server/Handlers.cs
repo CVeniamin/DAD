@@ -39,7 +39,7 @@ namespace OGP.Server
 
         public void Process(string source, object action)
         {
-            Console.WriteLine("Received Command from {0}", source);
+            //Console.WriteLine("Received Command from {0}", source);
 
             if (action is GameMovement movement)
             {
@@ -55,6 +55,7 @@ namespace OGP.Server
                 if (gameStartTickId >= 0 && !gameState.GameOver)
                 {
                     player.Direction = movement.Direction;
+                    Console.WriteLine("DIRECTION {0} : {1} :" , player.Direction, player.PlayerId);
                 }
                 else
                 {
@@ -116,7 +117,7 @@ namespace OGP.Server
             {
                 gameState.RoundId = (int)(tickId - gameStartTickId);
 
-                Console.WriteLine("Processing round {0}", gameState.RoundId);
+                //Console.WriteLine("Processing round {0}", gameState.RoundId);
 
                 //Add this game to previous games, used later for LocalState command
                 gameState.PreviousGames.Add(gameState.RoundId, gameState.WriteState());
@@ -185,33 +186,36 @@ namespace OGP.Server
                 {
                     continue;
                 }
-
-                if (DetectPlayerWallCollision(player, gameState.Walls))
-                {
-                    player.Direction = Direction.NONE;
-                    continue;
-                }
-
+                int DY = 0;
+                int DX = 0;
                 switch (player.Direction)
                 {
                     case Direction.UP:
-                        player.Y -= GameConstants.PLAYER_SPEED;
+                        DY = -GameConstants.PLAYER_SPEED;
                         break;
-
                     case Direction.DOWN:
-                        player.Y += GameConstants.PLAYER_SPEED;
+                        DY = GameConstants.PLAYER_SPEED;
                         break;
 
                     case Direction.LEFT:
-                        player.X -= GameConstants.PLAYER_SPEED;
+                        DX = -GameConstants.PLAYER_SPEED;
                         break;
 
                     case Direction.RIGHT:
-                        player.X += GameConstants.PLAYER_SPEED;
+                        DX = GameConstants.PLAYER_SPEED;
                         break;
                 }
+                if(PlayerHitsObstacle(player, DX, DY))
+                {
+                    Console.WriteLine("player.x {0} player.Y {1} DX {2} DY {3} ", player.X, player.Y, DX, DY);
+                    continue;
+                }
+                player.Y += DY;
+                player.X += DX;
             }
         }
+
+        
 
         private void MoveGhosts()
         {
@@ -252,7 +256,7 @@ namespace OGP.Server
                 GameStateView gameStateView = gameState.GetGameStateView();
 
 # if DEBUG
-                Console.WriteLine("Notifying {0} recipients of current state (we have {0} players)", stateDispatchDestinations.Count, gameStateView.Players.Count);
+                //Console.WriteLine("Notifying {0} recipients of current state (we have {0} players)", stateDispatchDestinations.Count, gameStateView.Players.Count);
 # endif
 
                 foreach (string Url in stateDispatchDestinations)
@@ -290,44 +294,55 @@ namespace OGP.Server
             }
         }
 
+        private Direction SwitchDirection(Player player)
+        {
+            Direction direction = player.Direction;
+            switch (direction)
+            {
+                case Direction.UP:
+                    return Direction.DOWN;
+                case Direction.LEFT:
+                    return Direction.RIGHT;
+                case Direction.RIGHT:
+                    return Direction.LEFT;
+                case Direction.DOWN:
+                    return Direction.UP;
+            }
+            return direction;
+        }
+        private bool PlayerHitsVerticalObstacle(Player player)
+        {
+            return (WillHitVerticalBoard(player.Y, ObjectDimensions.PLAYER_HEIGHT));
+        }
+        private bool PlayerHitsHorizontalObstacle(Player player)
+        {
+            return (WillHitHorizontalBoard(player.X , ObjectDimensions.PLAYER_WIDTH));
+        }
+        private bool PlayerHitsObstacle(Player player, int dx, int dy)
+        {
+            if (WillHitHorizontalBoard(player.X + dx, ObjectDimensions.PLAYER_WIDTH) 
+                || WillHitVerticalBoard(player.Y + dy, ObjectDimensions.BOARD_HEIGHT) 
+                || DetectPlayerWallCollision(player, dx , dy))
+            {
+                return true;
+            }
+            return false;
+        }
         private bool DetectPlayerCoinCollision(Player player, Coin coin)
         {
             return (DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
                                     coin.X, coin.Y, ObjectDimensions.COIN_WIDTH, ObjectDimensions.COIN_HEIGHT));
         }
-
         private bool DetectPlayerGhostCollision(Player player, Ghost ghost)
         {
             return DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
                                    ghost.X, ghost.Y, ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT);
         }
-
-        private bool GhostHitsVerticalObstacle(Ghost ghost)
+        private bool DetectPlayerWallCollision(Player player, int dx, int dy)
         {
-            return (WillHitVerticalBoard(ghost.Y, ObjectDimensions.GHOST_HEIGHT) || DetectGhostWallCollision(ghost));
-            
-        }
-
-        private bool WillHitVerticalBoard(int y, int height)
-        {
-            return ((y - height <= 0 || y + height >= ObjectDimensions.BOARD_HEIGHT));
-        }
-
-        private bool WillHitHorizontalBoard(int x, int width)
-        {
-            return ((x - width <= 0 || x + width >= ObjectDimensions.BOARD_WIDTH));
-        }
-        
-        private bool GhostHitsHorizontalObstacle(Ghost ghost)
-        {
-            return (WillHitHorizontalBoard(ghost.X, ObjectDimensions.GHOST_WIDTH ) || DetectGhostWallCollision(ghost));
-        }
-
-        private bool DetectPlayerWallCollision(Player player, List<Wall> walls)
-        {
-            foreach(Wall wall in walls)
+            foreach (Wall wall in gameState.Walls)
             {
-                if (DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
+                if (DetectCollision(player.X + dx, player.Y + dy , ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT,
                                     wall.X, wall.Y, wall.Width, wall.Height))
                 {
                     return true;
@@ -336,9 +351,18 @@ namespace OGP.Server
             return false;
         }
 
+        private bool GhostHitsVerticalObstacle(Ghost ghost)
+        {
+            return (WillHitVerticalBoard(ghost.Y, ObjectDimensions.GHOST_HEIGHT) || DetectGhostWallCollision(ghost));
+            
+        }
+        private bool GhostHitsHorizontalObstacle(Ghost ghost)
+        {
+            return (WillHitHorizontalBoard(ghost.X, ObjectDimensions.GHOST_WIDTH) || DetectGhostWallCollision(ghost));
+        }
         private bool DetectGhostWallCollision(Ghost ghost)
         {
-            foreach(Wall wall in gameState.Walls)
+            foreach (Wall wall in gameState.Walls)
             {
                 if (DetectCollision(ghost.X, ghost.Y, ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT,
                                     wall.X, wall.Y, wall.Width, wall.Height))
@@ -349,6 +373,14 @@ namespace OGP.Server
             return false;
         }
 
+        private bool WillHitVerticalBoard(int y, int height)
+        {
+            return ((y - height <= 0 || y + height >= ObjectDimensions.BOARD_HEIGHT));
+        }
+        private bool WillHitHorizontalBoard(int x, int width)
+        {
+            return ((x - width <= 0 || x + width >= ObjectDimensions.BOARD_WIDTH));
+        }
         private bool DetectCollision(int x1, int y1, int width1, int height1, int x2, int y2, int width2, int height2)
         {
             return (x1 < x2 + width2

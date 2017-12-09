@@ -106,7 +106,7 @@ namespace OGP.Client
                 catch (Exception ex)
                 {
 # if DEBUG
-                    Console.WriteLine("StateHandler drawing interrupted by exception: " + ex.Message);
+                    //Console.WriteLine("StateHandler drawing interrupted by exception: " + ex.Message);
 # endif
                 }
 
@@ -134,7 +134,7 @@ namespace OGP.Client
                     break;
                 }
                 ICommand cmd = CommandParser.Command.Parse(input);
-                string result = cmd.Exec(gameState);
+                string result = cmd.Exec(gameState, inManager, outManager);
 
                 // TODO: debug gameState here is different from gameState from StateHandler
                 if(result != String.Empty)

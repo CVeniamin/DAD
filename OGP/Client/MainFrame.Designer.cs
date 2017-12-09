@@ -23,7 +23,7 @@ namespace OGP.Client
         }
 
         private Label ScoreLabel;
-        private Label label2;
+        private Label GameStatusLabel;
 
         private TextBox tbMsg;
         private TextBox tbChat;
@@ -37,7 +37,7 @@ namespace OGP.Client
         private void InitializeComponent()
         {
             this.ScoreLabel = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.GameStatusLabel = new System.Windows.Forms.Label();
             this.tbMsg = new System.Windows.Forms.TextBox();
             this.tbChat = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
@@ -55,14 +55,14 @@ namespace OGP.Client
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(237, -1);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(115, 39);
-            this.label2.TabIndex = 72;
-            this.label2.Text = "label2";
+            this.GameStatusLabel.AutoSize = true;
+            this.GameStatusLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.GameStatusLabel.Location = new System.Drawing.Point(237, -1);
+            this.GameStatusLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.GameStatusLabel.Name = "label2";
+            this.GameStatusLabel.Size = new System.Drawing.Size(115, 39);
+            this.GameStatusLabel.TabIndex = 72;
+            this.GameStatusLabel.Text = "Waiting for players..";
             // 
             // tbMsg
             // 
@@ -94,7 +94,7 @@ namespace OGP.Client
             this.ClientSize = new System.Drawing.Size(673, 404);
             this.Controls.Add(this.tbChat);
             this.Controls.Add(this.tbMsg);
-            this.Controls.Add(this.label2);
+            this.Controls.Add(this.GameStatusLabel);
             this.Controls.Add(this.ScoreLabel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);

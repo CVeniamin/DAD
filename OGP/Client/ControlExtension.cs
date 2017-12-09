@@ -62,5 +62,41 @@ namespace OGP.Client
                     new object[] { value });
             }
         }
+
+        public static void SafeInvoke(this Control uiElement, Action updater, bool forceSynchronous)
+        {
+            if (uiElement == null)
+            {
+                throw new ArgumentNullException("uiElement");
+            }
+
+            if (uiElement.InvokeRequired && uiElement.IsHandleCreated)
+            {
+                if (forceSynchronous)
+                {
+                    uiElement.Invoke((Action)delegate { SafeInvoke(uiElement, updater, forceSynchronous); });
+                }
+                else
+                {
+                    uiElement.BeginInvoke((Action)delegate { SafeInvoke(uiElement, updater, forceSynchronous); });
+                }
+            }
+            else
+            {
+                if (!uiElement.IsHandleCreated)
+                {
+                    // Do nothing if the handle isn't created already.  The user's responsible
+                    // for ensuring that the handle they give us exists.
+                    return;
+                }
+
+                if (uiElement.IsDisposed)
+                {
+                    throw new ObjectDisposedException("Control is already disposed.");
+                }
+
+                updater();
+            }
+        }
     }
 }

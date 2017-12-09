@@ -1,22 +1,37 @@
 ﻿using System;
+using System.Text;
 
 namespace OGP.Server
 {
-    internal interface ICommand
+    public interface ICommand
     {
-        string Exec(object arg0);
+        string Exec(GameState gameState, InManager inManager, OutManager outManager);
     }
 
-    internal class GlobalStatus : ICommand
+    public class GlobalStatus : ICommand
     {
-        public string Exec(object arg0)
+        public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
-            // TODO 
+            // print if master server
+            //print number of clients
+            // print roundId for server and client
+            // if server and client are sync
+
+            string masterServer = outManager.GetMasterServer();
+            StringBuilder output = new StringBuilder();
+
+            foreach (Server server in gameState.Servers)
+            {
+                if(server.Url == masterServer)
+                {
+                    output.Append(String.Format("Master server at {0}", masterServer));
+                }
+            }
             return String.Empty;
         }
     }
 
-    internal class LocalState : ICommand
+    public class LocalState : ICommand
     {
         private int roundId;
 
@@ -25,20 +40,17 @@ namespace OGP.Server
             this.roundId = roundId;
         }
 
-        public string Exec(object arg0)
+        public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
-            if (arg0 is GameState gameState)
+            if (gameState.PreviousGames.TryGetValue(roundId, out string localState))
             {
-                if (gameState.PreviousGames.TryGetValue(roundId, out string localState))
-                {
-                    return localState;
-                }
+                return localState;
             }
             return String.Empty;
         }
     }
 
-    internal class InjectDelay : ICommand
+    public class InjectDelay : ICommand
     {
         private string dstPid;
 
@@ -48,26 +60,27 @@ namespace OGP.Server
             this.dstPid = dstPid;
         }
 
-        public string Exec(object arg0)
+        public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
+            outManager.SetDelay(dstPid, 200);
             return String.Empty;
         }
     }
 
-    internal class Unfreeze : ICommand
+    public class Unfreeze : ICommand
     {
-        public string Exec(object arg0)
+        public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
-            // TODO
+            inManager.Unfreeze();
             return String.Empty;
         }
     }
 
-    internal class Freeze : ICommand
+    public class Freeze : ICommand
     {
-        public string Exec(object arg0)
+        public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
-            // TODO
+            inManager.Freeze();
             return String.Empty;
         }
     }

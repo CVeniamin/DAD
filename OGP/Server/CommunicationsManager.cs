@@ -73,7 +73,13 @@ namespace OGP.Server
                     {
                         lock (passLock)
                         {
-                            PassCommandToHandler(command);
+                            try
+                            {
+                                PassCommandToHandler(command);
+                            }
+                            catch (ThreadInterruptedException)
+                            {
+                            }
                         }
 
                         // Check if we got frozen in the mean time
@@ -96,7 +102,7 @@ namespace OGP.Server
         {
             if(command.Args is ChatMessage chatMessage)
             {
-                Console.WriteLine("Enqueing chat message" + chatMessage.Message.ToString());
+                Console.WriteLine("Enqueing chat message " + chatMessage.Message.ToString());
             }
             incomingCommandQueue.Enqueue(command);
             handlerThread.Interrupt();
@@ -201,7 +207,6 @@ namespace OGP.Server
             }
             else if (destination == CLIENT_BROADCAST)
             {
-                Console.WriteLine("Got broadcast request");
                 foreach (Player player in gameState.Players)
                 {
                     Console.WriteLine("Broadcasting to {0} : {1} ", player.Url, ((ChatMessage)command.Args).Message);
@@ -250,6 +255,11 @@ namespace OGP.Server
             }
         }
 
+        public string GetMasterServer()
+        {
+            return masterServer;
+        }
+
         public void UpdateServerList(List<string> serverList)
         {
             this.serverList = serverList;
@@ -294,10 +304,6 @@ namespace OGP.Server
 
                 try
                 {
-                    if (command.Args is ChatMessage chatMessage)
-                    {
-                        Console.WriteLine("Emiting chat message" + chatMessage.Message.ToString());
-                    }
                     endpoint.Request(command);
                 }
                 catch (Exception ex)
