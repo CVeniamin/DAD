@@ -20,6 +20,7 @@ namespace OGP.Server
         private GameState gameState;
         private int numPlayers;
 
+        private long currentTickId = 0;
         private long gameStartTickId = -1;
         private Object dispatchDestinationLock = new Object();
 
@@ -55,7 +56,7 @@ namespace OGP.Server
                 if (gameStartTickId >= 0 && !gameState.GameOver)
                 {
                     player.Direction = movement.Direction;
-                    Console.WriteLine("DIRECTION {0} : {1} :" , player.Direction, player.PlayerId);
+                    Console.WriteLine("DIRECTION {0} : {1}" , player.Direction, player.PlayerId);
                 }
                 else
                 {
@@ -73,7 +74,7 @@ namespace OGP.Server
             else
             {
                 // State request from a slave
-                gameState.AddServerIfNotExists(source);
+                gameState.AddServerIfNotExists(source, currentTickId);
             }
             try
             {
@@ -85,7 +86,6 @@ namespace OGP.Server
             catch (ThreadInterruptedException)
             {
             }
-            
         }
 
         internal void FinilizeTick(long tickId)
@@ -127,11 +127,11 @@ namespace OGP.Server
                 CollectCoins(); // This will update player scores for alive players
 
                 CheckIfGameOver();
-                
-                //gameState.WriteState(); // This should write the game state to file or standard output or something
             }
-
+            
             DispatchState();
+
+            currentTickId = tickId;
         }
 
         private void StartGameIfReady(long tickId)
@@ -158,6 +158,7 @@ namespace OGP.Server
 
             if (alivePlayers == 0)
             {
+                Console.WriteLine("Game Over: everybody is dead");
                 gameState.GameOver = true;
                 return;
             }
@@ -173,6 +174,7 @@ namespace OGP.Server
 
             if (availableCoins == 0)
             {
+                Console.WriteLine("Game Over: all coins collected");
                 gameState.GameOver = true;
                 return;
             }
@@ -186,8 +188,10 @@ namespace OGP.Server
                 {
                     continue;
                 }
+
                 int DY = 0;
                 int DX = 0;
+
                 switch (player.Direction)
                 {
                     case Direction.UP:
@@ -205,32 +209,46 @@ namespace OGP.Server
                         DX = GameConstants.PLAYER_SPEED;
                         break;
                 }
-                if(PlayerHitsObstacle(player, DX, DY))
+
+                if (PlayerHitsObstacle(player, DX, DY))
                 {
-                    Console.WriteLine("player.x {0} player.Y {1} DX {2} DY {3} ", player.X, player.Y, DX, DY);
+                    Console.WriteLine("stopped {0}", player.PlayerId);
                     continue;
                 }
+
                 player.Y += DY;
                 player.X += DX;
             }
         }
 
-        
-
         private void MoveGhosts()
         {
             foreach (Ghost ghost in gameState.Ghosts)
             {
-                if (GhostHitsVerticalObstacle(ghost))
+                if (ghost.DX != 0 && (WillHitVerticalBoardEdge(ghost.X, ObjectDimensions.GHOST_WIDTH) || WillHitWall(new BoundingBox
                 {
-                    ghost.DY = -ghost.DY;
-                }
-
-                if (GhostHitsHorizontalObstacle(ghost))
+                    X1 = ghost.X + ghost.DX,
+                    X2 = ghost.X + ghost.DX + ObjectDimensions.GHOST_WIDTH,
+                    Y1 = ghost.Y,
+                    Y2 = ghost.Y + ObjectDimensions.GHOST_HEIGHT
+                })))
                 {
+                    Console.WriteLine("Ghost {0} inverting X", ghost.Color);
                     ghost.DX = -ghost.DX;
                 }
-
+                
+                if (ghost.DY != 0 && (WillHitHorizontalBoardEdge(ghost.Y, ObjectDimensions.GHOST_HEIGHT) || WillHitWall(new BoundingBox
+                {
+                    X1 = ghost.X,
+                    X2 = ghost.X + ObjectDimensions.GHOST_WIDTH,
+                    Y1 = ghost.Y + ghost.DY,
+                    Y2 = ghost.Y + ghost.DY + ObjectDimensions.GHOST_HEIGHT
+                })))
+                {
+                    Console.WriteLine("Ghost {0} inverting Y", ghost.Color);
+                    ghost.DY = -ghost.DY;
+                }
+                
                 ghost.X += ghost.DX;
                 ghost.Y += ghost.DY;
 
@@ -241,35 +259,6 @@ namespace OGP.Server
                         player.Alive = false;
                     }
                 }
-            }
-        }
-
-        private void DispatchState()
-        {
-            if (stateDispatchDestinations.Count == 0)
-            {
-                return;
-            }
-
-            lock (dispatchDestinationLock)
-            {
-                GameStateView gameStateView = gameState.GetGameStateView();
-
-# if DEBUG
-                //Console.WriteLine("Notifying {0} recipients of current state (we have {0} players)", stateDispatchDestinations.Count, gameStateView.Players.Count);
-# endif
-
-                foreach (string Url in stateDispatchDestinations)
-                {
-                    outManager.SendCommand(new Command
-                    {
-                        Type = CommandType.State,
-                        Args = gameStateView
-                    }, Url);
-                }
-                stateDispatchDestinations.Clear();
-
-                gameStateView = null;
             }
         }
 
@@ -294,101 +283,104 @@ namespace OGP.Server
             }
         }
 
-        private Direction SwitchDirection(Player player)
-        {
-            Direction direction = player.Direction;
-            switch (direction)
-            {
-                case Direction.UP:
-                    return Direction.DOWN;
-                case Direction.LEFT:
-                    return Direction.RIGHT;
-                case Direction.RIGHT:
-                    return Direction.LEFT;
-                case Direction.DOWN:
-                    return Direction.UP;
-            }
-            return direction;
-        }
-        private bool PlayerHitsVerticalObstacle(Player player)
-        {
-            return (WillHitVerticalBoard(player.Y, ObjectDimensions.PLAYER_HEIGHT));
-        }
-        private bool PlayerHitsHorizontalObstacle(Player player)
-        {
-            return (WillHitHorizontalBoard(player.X , ObjectDimensions.PLAYER_WIDTH));
-        }
         private bool PlayerHitsObstacle(Player player, int dx, int dy)
         {
-            if (WillHitHorizontalBoard(player.X + dx, ObjectDimensions.PLAYER_WIDTH) 
-                || WillHitVerticalBoard(player.Y + dy, ObjectDimensions.BOARD_HEIGHT) 
-                || DetectPlayerWallCollision(player, dx , dy))
+            int newX = player.X + dx;
+            int newY = player.Y + dy;
+
+            // Check board edges
+            if (WillHitVerticalBoardEdge(newX, ObjectDimensions.PLAYER_WIDTH) || WillHitHorizontalBoardEdge(newY, ObjectDimensions.PLAYER_WIDTH))
             {
                 return true;
             }
+
+            // Check walls
+            foreach (Wall wall in gameState.Walls)
+            {
+                if (DetectCollision(newX, newY, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, wall.X, wall.Y, wall.Width, wall.Height))
+                {
+                    return true;
+                }
+            }
+            
             return false;
         }
+        
+        private bool WillHitWall(BoundingBox boundingBox)
+        {
+            foreach (Wall wall in gameState.Walls)
+            {
+                if (DetectCollision(boundingBox, wall.X, wall.Y, wall.Width, wall.Height))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool WillHitVerticalBoardEdge(int x, int width)
+        {
+            return x < 0 || x + width > ObjectDimensions.BOARD_WIDTH;
+        }
+
+        private bool WillHitHorizontalBoardEdge(int y, int height)
+        {
+            return y < 0 || y + height > ObjectDimensions.BOARD_HEIGHT;
+        }
+        
         private bool DetectPlayerCoinCollision(Player player, Coin coin)
         {
             return (DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
                                     coin.X, coin.Y, ObjectDimensions.COIN_WIDTH, ObjectDimensions.COIN_HEIGHT));
         }
+
         private bool DetectPlayerGhostCollision(Player player, Ghost ghost)
         {
             return DetectCollision(player.X, player.Y, ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT, 
                                    ghost.X, ghost.Y, ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT);
         }
-        private bool DetectPlayerWallCollision(Player player, int dx, int dy)
-        {
-            foreach (Wall wall in gameState.Walls)
-            {
-                if (DetectCollision(player.X + dx, player.Y + dy , ObjectDimensions.PLAYER_WIDTH, ObjectDimensions.PLAYER_HEIGHT,
-                                    wall.X, wall.Y, wall.Width, wall.Height))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
 
-        private bool GhostHitsVerticalObstacle(Ghost ghost)
-        {
-            return (WillHitVerticalBoard(ghost.Y, ObjectDimensions.GHOST_HEIGHT) || DetectGhostWallCollision(ghost));
-            
-        }
-        private bool GhostHitsHorizontalObstacle(Ghost ghost)
-        {
-            return (WillHitHorizontalBoard(ghost.X, ObjectDimensions.GHOST_WIDTH) || DetectGhostWallCollision(ghost));
-        }
-        private bool DetectGhostWallCollision(Ghost ghost)
-        {
-            foreach (Wall wall in gameState.Walls)
-            {
-                if (DetectCollision(ghost.X, ghost.Y, ObjectDimensions.GHOST_WIDTH, ObjectDimensions.GHOST_HEIGHT,
-                                    wall.X, wall.Y, wall.Width, wall.Height))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private bool WillHitVerticalBoard(int y, int height)
-        {
-            return ((y - height <= 0 || y + height >= ObjectDimensions.BOARD_HEIGHT));
-        }
-        private bool WillHitHorizontalBoard(int x, int width)
-        {
-            return ((x - width <= 0 || x + width >= ObjectDimensions.BOARD_WIDTH));
-        }
         private bool DetectCollision(int x1, int y1, int width1, int height1, int x2, int y2, int width2, int height2)
         {
-            return (x1 < x2 + width2
-                        && x1 + width1 > x2
-                        && y1 < y2 + height2
-                        && y1 +height1 > y2);
+            return x1 < x2 + width2 && x1 + width1 > x2 && y1 < y2 + height2 && y1 + height1 > y2;
         }
 
+        private bool DetectCollision(BoundingBox a, int x, int y, int width, int height)
+        {
+            return a.X1 < x + width && a.X2 > x && a.Y1 < y + height && a.Y2 > y;
+        }
+
+        private void DispatchState()
+        {
+            lock (dispatchDestinationLock)
+            {
+                if (stateDispatchDestinations.Count == 0)
+                {
+                    return;
+                }
+
+                GameStateView gameStateView = gameState.GetGameStateView();
+                foreach (string Url in stateDispatchDestinations)
+                {
+                    outManager.SendCommand(new Command
+                    {
+                        Type = CommandType.State,
+                        Args = gameStateView
+                    }, Url);
+                }
+
+                stateDispatchDestinations.Clear();
+            }
+        }
+    }
+
+    internal class BoundingBox
+    {
+        public int X1 { get; set; }
+        public int X2 { get; set; }
+        public int Y1 { get; set; }
+        public int Y2 { get; set; }
     }
 
     public class ChatHandler : IHandler

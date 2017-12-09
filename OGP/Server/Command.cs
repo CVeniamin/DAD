@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OGP.Middleware;
+using System;
 using System.Text;
 
 namespace OGP.Server
@@ -17,7 +18,7 @@ namespace OGP.Server
             string masterServer = outManager.GetMasterServer();
             StringBuilder globalStatus = new StringBuilder();
 
-            foreach (Server server in gameState.Servers)
+            foreach (GameServer server in gameState.Servers)
             {
                 if(server.Url == masterServer)
                 {

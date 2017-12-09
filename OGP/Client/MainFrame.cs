@@ -252,10 +252,15 @@ namespace OGP.Client
                     playerPictureBoxes.Add(player.PlayerId, pictureBox);
                 }
 
-                // Update Player Score
+                // Update labels for playing player
                 if (player.PlayerId == this.Pid)
                 {
                     ScoreLabel.SetPropertyThreadSafe(() => ScoreLabel.Text, String.Format("Player {0} Score: {1}", Pid, player.Score.ToString()));
+
+                    if (!player.Alive)
+                    {
+                        GameStatusLabel.SetPropertyThreadSafe(() => GameStatusLabel.Text, "You are dead");
+                    }
                 }
 
                 if (player.Alive)
@@ -271,7 +276,6 @@ namespace OGP.Client
                 else
                 {
                     pictureBox.Visible = false;
-                    GameStatusLabel.SetPropertyThreadSafe(() => GameStatusLabel.Text, "Game Over!");
                 }
             }
         }

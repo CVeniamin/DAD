@@ -13,7 +13,7 @@ namespace OGP.Server
         public List<Ghost> Ghosts;
         public List<Coin> Coins;
         public List<Wall> Walls;
-        public List<Server> Servers;
+        public List<GameServer> Servers;
         public bool GameOver;
         public int RoundId;
         public Dictionary<int, string> PreviousGames;
@@ -26,7 +26,7 @@ namespace OGP.Server
         public List<Ghost> Ghosts { get; private set; }
         public List<Coin> Coins { get; private set; }
         public List<Wall> Walls { get; private set; }
-        public List<Server> Servers { get; private set; }
+        public List<GameServer> Servers { get; private set; }
 
         public bool GameOver { get; set; }
         public int RoundId { get; set; }
@@ -161,7 +161,6 @@ namespace OGP.Server
 
         internal GameStateView GetGameStateView()
         {
-            //Console.WriteLine("Returning new gameStateView");
             return new GameStateView
             {
                 Players = Players,
@@ -177,26 +176,30 @@ namespace OGP.Server
 
         private void LoadServers(List<string> existsingServersList)
         {
-            Servers = new List<Server>();
+            Servers = new List<GameServer>();
 
             foreach (string Url in existsingServersList)
             {
-                Servers.Add(new Server
+                Servers.Add(new GameServer
                 {
                     Url = Url
                 });
             }
         }
 
-        internal void AddServerIfNotExists(string source)
+        internal void AddServerIfNotExists(string source, long tickId)
         {
-            if (!Servers.Exists(server => server.Url == source))
+            GameServer existingServer = Servers.Find(server => server.Url == source);
+            if (existingServer == null)
             {
-                Servers.Add(new Server
+                existingServer = new GameServer
                 {
                     Url = source
-                });
+                };
+                Servers.Add(existingServer);
             }
+
+            existingServer.LastAlive = tickId;
         }
 
         internal void AddPlayerIfNotExists(string Url, string Pid)

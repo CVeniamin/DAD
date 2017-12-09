@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Remoting;
 using System.Threading;
+using OGP.Middleware;
 
 namespace OGP.Server
 {
