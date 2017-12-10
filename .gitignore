@@ -305,3 +305,5 @@ __pycache__/
 
 # OpenCover UI analysis results
 OpenCover/
+/PuppetMaster.lnk
+*.lnk
