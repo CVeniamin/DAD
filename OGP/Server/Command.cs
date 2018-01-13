@@ -95,7 +95,7 @@ namespace OGP.Server
 
         public string Exec(GameState gameState, InManager inManager, OutManager outManager)
         {
-            outManager.SetDelay(dstPid, 200);
+            outManager.SetDelay(dstPid, 10000);
             return String.Empty;
         }
     }

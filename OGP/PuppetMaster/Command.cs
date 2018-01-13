@@ -229,7 +229,7 @@ namespace OGP.PuppetMaster
 
                 string directory = Path.Combine(System.Environment.CurrentDirectory, filePath);
                 Directory.CreateDirectory(directory);
-
+                
                 StreamWriter file = new StreamWriter(directory + filename)
                 {
                     AutoFlush = true,
@@ -240,7 +240,7 @@ namespace OGP.PuppetMaster
                     file.Write(localState);
                     file.Close();
                 }
-                Console.WriteLine(String.Format("State written to {0}", filename));
+                Console.WriteLine(String.Format("State written to {0}", directory + filename));
                 return localState;
             }
 
